@@ -73,10 +73,17 @@ pytest
 
 Cakupan saat ini: unit test murni untuk `services/saw_engine.py` (algoritma
 ranking SAW), `services/json_repair.py`, dan `services/kategori_matcher.py`
-(tanpa Supabase sama sekali), plus test `services/gemini_client.py`/
+(tanpa Supabase sama sekali), test `services/gemini_client.py`/
 `gemini_vision_client.py` dengan Gemini API di-mock (retry/fallback model,
-dan memastikan pesan error mentah dari Google tidak pernah bocor ke user).
-Belum ada test untuk router/endpoint (butuh Supabase) atau CI otomatis.
+dan memastikan pesan error mentah dari Google tidak pernah bocor ke user),
+plus router/integration test untuk `routers/allocations.py` dan
+`routers/wallets.py` lewat FastAPI `TestClient` dengan Supabase client
+di-fake (`tests/fakes.py::FakeSupabaseClient`, bukan Supabase asli) —
+meng-cover invariant paling kritis: suggest alokasi tidak pernah menulis ke
+tabel `alokasi` (cuma `confirm` yang boleh), dan wallet dengan transaksi
+terkait tidak bisa dihapus (409). Router lain (auth, transactions,
+categories, dashboard, insights, receipts, statements, goals, saw_weights)
+dan CI otomatis belum dicakup.
 
 ## Status Implementasi
 
