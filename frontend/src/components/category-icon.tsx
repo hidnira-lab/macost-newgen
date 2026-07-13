@@ -28,6 +28,10 @@ const MAP: Record<string, { Icon: LucideIcon; color: string; bg: string }> = {
 
 const DEFAULT = { Icon: CreditCard, color: "#717182", bg: "#F4F4F6" };
 
+export function getCategoryStyle(category: string) {
+  return MAP[category] ?? DEFAULT;
+}
+
 export default function CategoryIcon({
   category,
   size = 18,
