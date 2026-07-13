@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 
 const links = [
+  { href: "/home", label: "Home" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/transactions", label: "Transaksi" },
   { href: "/goals", label: "Goals" },
