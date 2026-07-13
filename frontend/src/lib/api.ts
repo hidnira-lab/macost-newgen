@@ -11,6 +11,7 @@ import type {
   GoalRankingItem,
   InsightResponse,
   Kategori,
+  PenggunaUpdateRequest,
   ReceiptExtraction,
   SAWWeights,
   StatementExtractionResponse,
@@ -84,6 +85,8 @@ export const api = {
     request<AuthResponse>("/api/auth/login", { method: "POST", body: JSON.stringify(payload) }),
   logout: (token: string) => request<{ status: string }>("/api/auth/logout", { method: "POST" }, token),
   me: (token: string) => request<User>("/api/auth/me", {}, token),
+  updateMe: (token: string, payload: PenggunaUpdateRequest) =>
+    request<User>("/api/auth/me", { method: "PATCH", body: JSON.stringify(payload) }, token),
   categories: (token: string) => request<Kategori[]>("/api/categories", {}, token),
   transactions: {
     list: (token: string) => request<Transaksi[]>("/api/transactions", {}, token),

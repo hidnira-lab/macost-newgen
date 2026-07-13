@@ -11,6 +11,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (nama: string, email: string, password: string) => Promise<{ emailConfirmationRequired: boolean }>;
   logout: () => Promise<void>;
+  updateUser: (patch: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -47,6 +48,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: nextUser, token: nextToken }));
   }
 
+  // The register/login response is cached to localStorage and never
+  // refetched, so a successful profile edit (e.g. changing nama) needs this
+  // to update both in-memory state and the cache — otherwise the old name
+  // keeps showing on Home/Profile/Navbar until the next login.
+  function updateUser(patch: Partial<User>) {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: next, token }));
+      return next;
+    });
+  }
+
   async function login(email: string, password: string) {
     const res = await api.login({ email, password });
     if (!res.access_token) throw new Error("Login gagal");
@@ -75,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

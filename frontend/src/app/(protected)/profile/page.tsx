@@ -147,26 +147,24 @@ export default function ProfilePage() {
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    disabled
-                    title="Segera hadir"
+                  <Link
+                    href="/edit-profile"
+                    title="Edit Profil"
                     style={{
                       width: 36,
                       height: 36,
                       borderRadius: 10,
                       backgroundColor: "rgba(255,255,255,0.15)",
                       border: "none",
-                      cursor: "not-allowed",
+                      cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       flexShrink: 0,
-                      opacity: 0.6,
                     }}
                   >
                     <Pencil size={16} color="white" />
-                  </button>
+                  </Link>
                 </div>
               </div>
 

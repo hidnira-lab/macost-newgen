@@ -61,6 +61,14 @@ export interface User {
   id: string;
   email: string;
   nama?: string | null;
+  telepon?: string | null;
+  kota?: string | null;
+}
+
+export interface PenggunaUpdateRequest {
+  nama?: string;
+  telepon?: string;
+  kota?: string;
 }
 
 export interface AuthResponse {
