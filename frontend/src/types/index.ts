@@ -2,6 +2,24 @@ export type TipeKategori = "Pemasukan" | "Pengeluaran";
 export type FlagPemasukan = "Fixed Routine" | "Flexible Side Income";
 export type FlagPengeluaran = "Kebutuhan" | "Keinginan";
 export type MetodeInput = "Manual" | "Scan Struk" | "Upload E-Statement";
+export type WalletIcon = "Banknote" | "Smartphone" | "Building2" | "Landmark" | "CreditCard" | "GraduationCap";
+
+export interface Dompet {
+  id: string;
+  nama_dompet: string;
+  icon: WalletIcon;
+  warna: string;
+  saldo: number;
+  pengguna_id: string;
+  created_at: string;
+}
+
+export interface DompetCreateRequest {
+  nama_dompet: string;
+  icon: WalletIcon;
+  warna: string;
+  saldo?: number;
+}
 
 export interface Kategori {
   id: string;

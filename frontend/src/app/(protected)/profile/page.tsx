@@ -6,7 +6,7 @@ import { History, Wallet, SlidersHorizontal, Bell, Clock, LogOut, Pencil, Chevro
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import BottomNav from "@/components/bottom-nav";
-import type { Goal, Transaksi } from "@/types";
+import type { Dompet, Goal, Transaksi } from "@/types";
 
 function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(
@@ -22,12 +22,11 @@ type MenuItem = {
   href?: string;
 };
 
-// Kelola Dompet / Prioritas Goal / Saran Tertunda / Notifikasi have no backing
-// endpoint yet (no wallet CRUD, SAW weights are fixed constants, no persisted
-// "pending suggestion" list) — shown as inert "Segera" entries instead of
-// faking a working screen for them.
+// Prioritas Goal / Saran Tertunda / Notifikasi have no backing endpoint yet
+// (SAW weights are fixed constants, no persisted "pending suggestion" list)
+// — shown as inert "Segera" entries instead of faking a working screen for
+// them. Kelola Dompet moved to a real link once wallet CRUD shipped.
 const SEGERA_ITEMS: MenuItem[] = [
-  { Icon: Wallet, label: "Kelola Dompet", desc: "Tambah dan atur sumber dana", color: "#22C55E" },
   { Icon: SlidersHorizontal, label: "Prioritas Goal", desc: "Atur bobot SAW & strategi", color: "#FF8929" },
   { Icon: Clock, label: "Saran Tertunda", desc: "Fitur akan datang", color: "#F59E0B" },
   { Icon: Bell, label: "Notifikasi", desc: "Pengingat tabungan & tagihan", color: "#A855F7" },
@@ -37,6 +36,7 @@ export default function ProfilePage() {
   const { token, user, logout } = useAuth();
   const [transactions, setTransactions] = useState<Transaksi[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [wallets, setWallets] = useState<Dompet[]>([]);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -45,14 +45,16 @@ export default function ProfilePage() {
       if (!token) return;
       setLoading(true);
       try {
-        const [txns, gls, dash] = await Promise.all([
+        const [txns, gls, dash, wlts] = await Promise.all([
           api.transactions.list(token),
           api.goals.list(token),
           api.dashboard.summary(token),
+          api.wallets.list(token),
         ]);
         setTransactions(txns);
         setGoals(gls);
         setBalance(dash.total_saldo);
+        setWallets(wlts);
       } catch {
         // non-fatal: profile hero/menu still renders without stats
       } finally {
@@ -248,6 +250,48 @@ export default function ProfilePage() {
                       <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1E1E", margin: "0 0 2px" }}>Riwayat Transaksi</p>
                       <p style={{ fontSize: 12, color: "#A0A0A8", margin: 0 }}>
                         {loading ? "…" : `${transactions.length} transaksi tercatat`}
+                      </p>
+                    </div>
+                    <ChevronRight size={18} color="#C0C0C8" />
+                  </Link>
+
+                  <Link
+                    href="/wallets"
+                    style={{
+                      width: "100%",
+                      padding: "16px 18px",
+                      border: "none",
+                      borderTop: "1px solid #F4F4F4",
+                      backgroundColor: "transparent",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      textAlign: "left",
+                      fontFamily: "var(--font-inter), sans-serif",
+                      textDecoration: "none",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 13,
+                        flexShrink: 0,
+                        backgroundColor: "#22C55E15",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#22C55E",
+                      }}
+                    >
+                      <Wallet size={20} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1E1E", margin: "0 0 2px" }}>Kelola Dompet</p>
+                      <p style={{ fontSize: 12, color: "#A0A0A8", margin: 0 }}>
+                        {loading ? "…" : `${wallets.length} dompet terhubung`}
                       </p>
                     </div>
                     <ChevronRight size={18} color="#C0C0C8" />

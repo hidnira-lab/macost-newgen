@@ -4,6 +4,8 @@ import type {
   AllocationSuggestion,
   AuthResponse,
   DashboardSummary,
+  Dompet,
+  DompetCreateRequest,
   Goal,
   GoalCreateRequest,
   GoalRankingItem,
@@ -118,5 +120,13 @@ export const api = {
   statements: {
     extract: (token: string, file: File) =>
       uploadFile<StatementExtractionResponse>("/api/statements/extract", file, token),
+  },
+  wallets: {
+    list: (token: string) => request<Dompet[]>("/api/wallets", {}, token),
+    create: (token: string, payload: DompetCreateRequest) =>
+      request<Dompet>("/api/wallets", { method: "POST", body: JSON.stringify(payload) }, token),
+    update: (token: string, id: string, payload: Partial<DompetCreateRequest>) =>
+      request<Dompet>(`/api/wallets/${id}`, { method: "PUT", body: JSON.stringify(payload) }, token),
+    remove: (token: string, id: string) => request<void>(`/api/wallets/${id}`, { method: "DELETE" }, token),
   },
 };
