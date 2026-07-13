@@ -159,6 +159,20 @@ export interface AllocationConfirmRequest {
   nominal_alokasi: number;
 }
 
+export interface AllocationPending {
+  id: string;
+  transaksi_id: string;
+  goal_id: string;
+  nama_goal: string;
+  nominal_alokasi_disarankan: number;
+  persentase: number;
+  pesan: string;
+  created_at: string;
+  current_saved: number;
+  nominal_target: number;
+  progress_percent: number;
+}
+
 export interface Alokasi {
   id: string;
   nominal_alokasi: number;

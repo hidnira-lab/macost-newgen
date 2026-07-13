@@ -11,6 +11,7 @@ const links = [
   { href: "/wallets", label: "Dompet" },
   { href: "/goals", label: "Goals" },
   { href: "/goal-priority", label: "Prioritas" },
+  { href: "/pending-allocations", label: "Saran Tertunda" },
   { href: "/insights", label: "AI Insight" },
   { href: "/profile", label: "Profil" },
   { href: "/edit-profile", label: "Edit Profil" },

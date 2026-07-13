@@ -1,6 +1,7 @@
 import type {
   Alokasi,
   AllocationConfirmRequest,
+  AllocationPending,
   AllocationSuggestion,
   AuthResponse,
   DashboardSummary,
@@ -114,6 +115,9 @@ export const api = {
       request<AllocationSuggestion>("/api/allocations/suggest", { method: "POST", body: JSON.stringify(payload) }, token),
     confirm: (token: string, payload: AllocationConfirmRequest) =>
       request<Alokasi>("/api/allocations/confirm", { method: "POST", body: JSON.stringify(payload) }, token),
+    pending: (token: string) => request<AllocationPending[]>("/api/allocations/pending", {}, token),
+    dismissAllPending: (token: string) =>
+      request<void>("/api/allocations/pending", { method: "DELETE" }, token),
   },
   insights: {
     generate: (token: string) => request<InsightResponse>("/api/insights/generate", { method: "POST" }, token),

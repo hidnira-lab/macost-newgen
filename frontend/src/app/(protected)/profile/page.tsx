@@ -22,12 +22,10 @@ type MenuItem = {
   href?: string;
 };
 
-// Saran Tertunda / Notifikasi have no backing endpoint yet (no persisted
-// "pending suggestion" list) — shown as inert "Segera" entries instead of
-// faking a working screen for them. Kelola Dompet and Prioritas Goal moved
-// to real links once their backends shipped.
+// Notifikasi has no backing endpoint yet — shown as an inert "Segera" entry
+// instead of faking a working screen for it. Kelola Dompet, Prioritas Goal,
+// and Saran Tertunda moved to real links once their backends shipped.
 const SEGERA_ITEMS: MenuItem[] = [
-  { Icon: Clock, label: "Saran Tertunda", desc: "Fitur akan datang", color: "#F59E0B" },
   { Icon: Bell, label: "Notifikasi", desc: "Pengingat tabungan & tagihan", color: "#A855F7" },
 ];
 
@@ -36,6 +34,7 @@ export default function ProfilePage() {
   const [transactions, setTransactions] = useState<Transaksi[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [wallets, setWallets] = useState<Dompet[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -44,16 +43,18 @@ export default function ProfilePage() {
       if (!token) return;
       setLoading(true);
       try {
-        const [txns, gls, dash, wlts] = await Promise.all([
+        const [txns, gls, dash, wlts, pending] = await Promise.all([
           api.transactions.list(token),
           api.goals.list(token),
           api.dashboard.summary(token),
           api.wallets.list(token),
+          api.allocations.pending(token),
         ]);
         setTransactions(txns);
         setGoals(gls);
         setBalance(dash.total_saldo);
         setWallets(wlts);
+        setPendingCount(pending.length);
       } catch {
         // non-fatal: profile hero/menu still renders without stats
       } finally {
@@ -330,6 +331,48 @@ export default function ProfilePage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1E1E", margin: "0 0 2px" }}>Prioritas Goal</p>
                       <p style={{ fontSize: 12, color: "#A0A0A8", margin: 0 }}>Atur bobot SAW & strategi</p>
+                    </div>
+                    <ChevronRight size={18} color="#C0C0C8" />
+                  </Link>
+
+                  <Link
+                    href="/pending-allocations"
+                    style={{
+                      width: "100%",
+                      padding: "16px 18px",
+                      border: "none",
+                      borderTop: "1px solid #F4F4F4",
+                      backgroundColor: "transparent",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      textAlign: "left",
+                      fontFamily: "var(--font-inter), sans-serif",
+                      textDecoration: "none",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 13,
+                        flexShrink: 0,
+                        backgroundColor: "#F59E0B15",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#F59E0B",
+                      }}
+                    >
+                      <Clock size={20} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1E1E", margin: "0 0 2px" }}>Saran Tertunda</p>
+                      <p style={{ fontSize: 12, color: "#A0A0A8", margin: 0 }}>
+                        {loading ? "…" : pendingCount > 0 ? `${pendingCount} saran menunggu konfirmasi` : "Tidak ada saran tertunda"}
+                      </p>
                     </div>
                     <ChevronRight size={18} color="#C0C0C8" />
                   </Link>
