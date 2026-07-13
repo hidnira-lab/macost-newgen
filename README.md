@@ -63,6 +63,21 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
+### 3. Jalankan test suite (backend)
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+pytest
+```
+
+Cakupan saat ini: unit test murni untuk `services/saw_engine.py` (algoritma
+ranking SAW), `services/json_repair.py`, dan `services/kategori_matcher.py`
+(tanpa Supabase sama sekali), plus test `services/gemini_client.py`/
+`gemini_vision_client.py` dengan Gemini API di-mock (retry/fallback model,
+dan memastikan pesan error mentah dari Google tidak pernah bocor ke user).
+Belum ada test untuk router/endpoint (butuh Supabase) atau CI otomatis.
+
 ## Status Implementasi
 
 - [x] Scaffold Next.js + FastAPI + docker-compose
