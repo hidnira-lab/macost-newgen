@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -37,3 +37,17 @@ class AllocationConfirmRequest(BaseModel):
     transaksi_id: str
     goal_id: str
     nominal_alokasi: float = Field(gt=0)
+
+
+class AllocationPending(BaseModel):
+    id: str
+    transaksi_id: str
+    goal_id: str
+    nama_goal: str
+    nominal_alokasi_disarankan: float
+    persentase: int
+    pesan: str
+    created_at: datetime
+    current_saved: float
+    nominal_target: float
+    progress_percent: float
