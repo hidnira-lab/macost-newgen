@@ -231,7 +231,7 @@ export default function ScanReceiptModal({
             Membaca strukmu...
           </p>
           <p style={{ fontSize: 13, color: "#717182", margin: 0 }}>
-            AI sedang mengekstrak data, biasanya 15-25 detik
+            AI sedang mengekstrak data, maksimal 10 detik
           </p>
         </div>
       </div>

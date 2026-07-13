@@ -7,12 +7,9 @@ from services.gemini_vision_client import GeminiVisionError, GeminiVisionTimeout
 from services.json_repair import repair_and_parse_json
 from services.kategori_matcher import match_kategori
 
-# FR-004 aslinya mewajibkan 10 detik. Dinaikkan sementara ke 25 detik khusus
-# untuk demo (lihat STATUS.md) karena latency Gemini Vision di dev environment
-# ini teramati ~17.5 detik -- 10 detik nyaris selalu jatuh ke fallback. Kalau
-# API tetap tidak merespons dalam 25 detik, treat sebagai gagal dan langsung
-# ke fallback manual (tidak retry).
-RECEIPT_TIMEOUT_SECONDS = 25.0
+# FR-004: 10 detik untuk scan struk. Kalau API tidak merespons dalam waktu
+# itu, treat sebagai gagal dan langsung ke fallback manual (tidak retry).
+RECEIPT_TIMEOUT_SECONDS = 10.0
 
 PROMPT_TEMPLATE = """Kamu membantu mengekstrak data dari foto struk belanja untuk aplikasi keuangan mahasiswa Indonesia.
 
@@ -45,7 +42,7 @@ def scan_receipt(file_bytes: bytes, mime_type: str, kategori_list: list[dict]) -
         return ReceiptExtraction(
             success=False,
             error_reason="timeout",
-            error_message="Ekstraksi tidak selesai dalam 25 detik. Isi manual ya.",
+            error_message="Ekstraksi tidak selesai dalam 10 detik. Isi manual ya.",
         )
     except GeminiVisionError as exc:
         return ReceiptExtraction(success=False, error_reason="api_error", error_message=str(exc))

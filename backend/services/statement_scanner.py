@@ -8,7 +8,7 @@ from services.json_repair import repair_and_parse_json
 from services.kategori_matcher import match_kategori
 
 # E-statement bisa berisi banyak halaman/baris, dikasih jatah waktu lebih
-# longgar daripada scan struk (25 detik untuk demo, lihat receipt_scanner.py).
+# longgar daripada scan struk (yang wajib 10 detik per FR-004).
 STATEMENT_TIMEOUT_SECONDS = 45.0
 
 PROMPT_TEMPLATE = """Kamu membantu mengekstrak daftar transaksi dari e-statement/mutasi rekening bank (PDF) untuk aplikasi keuangan mahasiswa Indonesia.
