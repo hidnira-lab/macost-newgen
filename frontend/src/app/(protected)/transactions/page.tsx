@@ -232,7 +232,7 @@ export default function TransactionsPage() {
             onClick={() => receiptInputRef.current?.click()}
             className="rounded-md border border-slate-300 text-sm font-medium px-4 py-2 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
-            {scanning ? "Memindai struk... (maks 10 detik)" : "Scan Struk"}
+            {scanning ? "Memindai..." : "Scan Struk"}
           </button>
 
           <input
@@ -250,6 +250,15 @@ export default function TransactionsPage() {
             Upload E-Statement (PDF)
           </button>
         </div>
+        {scanning && (
+          <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-md px-3 py-2">
+            <span
+              aria-hidden
+              className="h-4 w-4 shrink-0 rounded-full border-2 border-slate-300 border-t-slate-900 animate-spin"
+            />
+            Membaca struk dengan AI... biasanya 15-25 detik, mohon tunggu.
+          </div>
+        )}
         {scanMessage && (
           <p
             className={
