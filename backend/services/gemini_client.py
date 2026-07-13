@@ -1,6 +1,9 @@
+import logging
 import time
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 GEMINI_MODEL = "gemini-flash-latest"
@@ -74,7 +77,8 @@ def generate_json_text(prompt: str, api_key: str) -> str:
         response = _call_model(GEMINI_FALLBACK_MODEL, payload, api_key)
 
     if response is None:
-        raise GeminiError("Gagal menghubungi Gemini API: request timed out atau koneksi gagal")
+        logger.warning("Gemini API request failed on both models: timeout or connection error")
+        raise GeminiError("Gagal menghubungi layanan AI. Periksa koneksi lalu coba lagi.")
     if response.status_code == 503:
         raise GeminiError(
             "Gemini API sedang mengalami lonjakan trafik tinggi di sisi Google. Coba lagi beberapa saat lagi."
@@ -84,7 +88,8 @@ def generate_json_text(prompt: str, api_key: str) -> str:
             "Kuota Gemini API sudah habis untuk saat ini. Coba lagi beberapa saat lagi atau cek limit di Google AI Studio."
         )
     if response.status_code != 200:
-        raise GeminiError(f"Gemini API error {response.status_code}: {response.text[:300]}")
+        logger.warning("Gemini API error %s: %s", response.status_code, response.text[:300])
+        raise GeminiError("Gagal memproses dengan AI. Coba lagi beberapa saat lagi.")
 
     data = response.json()
     try:
@@ -93,7 +98,8 @@ def generate_json_text(prompt: str, api_key: str) -> str:
         text_parts = [p["text"] for p in parts if "text" in p]
         text = "".join(text_parts)
     except (KeyError, IndexError) as exc:
-        raise GeminiError(f"Format respons Gemini tidak sesuai ekspektasi: {data}") from exc
+        logger.warning("Gemini API response format unexpected: %s", data)
+        raise GeminiError("Format respons AI tidak sesuai. Coba lagi beberapa saat lagi.") from exc
 
     if candidate.get("finishReason") == "MAX_TOKENS":
         raise GeminiError("Respons Gemini terpotong (melebihi batas token) sebelum JSON selesai")

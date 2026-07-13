@@ -1,4 +1,5 @@
 import json
+import logging
 
 from supabase import Client
 
@@ -10,6 +11,8 @@ from services.goal_ranking import rank_user_goals
 from services.json_repair import repair_and_parse_json
 from services.monthly_trend import compute_monthly_trend
 from services.wallet_balance import compute_total_saldo
+
+logger = logging.getLogger(__name__)
 
 VALID_TIPE = {"positive", "warning", "info", "tip"}
 
@@ -66,7 +69,8 @@ def generate_insights(db: Client, pengguna_id: str) -> list[dict]:
     try:
         parsed = repair_and_parse_json(raw)
     except json.JSONDecodeError as exc:
-        raise GeminiError(f"Tidak bisa parse JSON dari respons Gemini: {raw[:300]}") from exc
+        logger.warning("Could not parse JSON from Gemini response: %s", raw[:300])
+        raise GeminiError("Gagal membaca hasil dari AI. Coba lagi beberapa saat lagi.") from exc
 
     if not isinstance(parsed, list):
         raise GeminiError("Respons Gemini bukan JSON array")

@@ -1,6 +1,9 @@
 import base64
+import logging
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 GEMINI_VISION_API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 # Same fallback used by services/gemini_client.py (AI Insight) -- receipts and
@@ -72,10 +75,17 @@ def call_gemini_vision(prompt: str, file_bytes: bytes, mime_type: str, api_key: 
         except httpx.TimeoutException as exc:
             raise GeminiVisionTimeout(f"Gemini Vision tidak merespons dalam {timeout} detik") from exc
         except httpx.RequestError as exc:
-            raise GeminiVisionError(f"Gagal menghubungi Gemini Vision API: {exc}") from exc
+            logger.warning("Gemini Vision request failed on both models: %s", exc)
+            raise GeminiVisionError("Gagal menghubungi layanan AI. Periksa koneksi lalu coba lagi.") from exc
 
+    if response.status_code in VISION_TRANSIENT_STATUS_CODES:
+        logger.warning(
+            "Gemini Vision still transient after fallback: %s %s", response.status_code, response.text[:300]
+        )
+        raise GeminiVisionError("Layanan AI sedang sibuk atau kuota habis. Coba lagi beberapa saat lagi.")
     if response.status_code != 200:
-        raise GeminiVisionError(f"Gemini Vision API error {response.status_code}: {response.text[:300]}")
+        logger.warning("Gemini Vision API error %s: %s", response.status_code, response.text[:300])
+        raise GeminiVisionError("Gagal memproses dengan AI. Coba lagi atau isi manual.")
 
     data = response.json()
     try:
@@ -83,4 +93,5 @@ def call_gemini_vision(prompt: str, file_bytes: bytes, mime_type: str, api_key: 
         text_parts = [p["text"] for p in parts if "text" in p]
         return "".join(text_parts)
     except (KeyError, IndexError) as exc:
-        raise GeminiVisionError(f"Format respons Gemini Vision tidak sesuai ekspektasi: {data}") from exc
+        logger.warning("Gemini Vision response format unexpected: %s", data)
+        raise GeminiVisionError("Format respons AI tidak sesuai. Coba lagi atau isi manual.") from exc
