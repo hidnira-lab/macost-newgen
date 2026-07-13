@@ -9,6 +9,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", Icon: BarChart2 },
   { href: "/goals", label: "Goals", Icon: Target },
   { href: "/insights", label: "AI", Icon: Sparkles },
+  { href: "/profile", label: "Profil", Icon: User },
 ] as const;
 
 export default function BottomNav() {
@@ -87,40 +88,6 @@ export default function BottomNav() {
           </Link>
         );
       })}
-
-      {/* Profile: no screen ported yet, kept visually present but inert */}
-      <button
-        type="button"
-        title="Segera hadir"
-        disabled
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 3,
-          padding: "6px 4px",
-          background: "none",
-          border: "none",
-          cursor: "not-allowed",
-          color: "#D0D0D6",
-          fontFamily: "var(--font-inter), sans-serif",
-        }}
-      >
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 12,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <User size={20} strokeWidth={1.8} />
-        </div>
-        <span style={{ fontSize: 10, fontWeight: 400 }}>Profil</span>
-      </button>
     </nav>
   );
 }

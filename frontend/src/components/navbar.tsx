@@ -10,6 +10,7 @@ const links = [
   { href: "/transactions", label: "Transaksi" },
   { href: "/goals", label: "Goals" },
   { href: "/insights", label: "AI Insight" },
+  { href: "/profile", label: "Profil" },
 ];
 
 export default function Navbar() {
