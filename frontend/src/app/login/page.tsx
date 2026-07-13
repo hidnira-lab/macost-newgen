@@ -110,7 +110,7 @@ export default function LoginPage() {
                 style={{ height: 44, width: "auto", display: "block", margin: "0 auto 8px" }}
               />
               <p style={{ fontSize: 13, color: "rgba(180,210,255,0.8)", margin: "4px 0 0" }}>
-                Kelola keuangan mahasiswamu
+                 Yuk Kendalikan Arus Keuanganmu Sekarang!
               </p>
             </div>
           </div>

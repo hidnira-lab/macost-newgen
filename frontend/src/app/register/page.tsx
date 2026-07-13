@@ -128,14 +128,18 @@ export default function RegisterPage() {
             <div style={{ position: "absolute", top: -20, right: -10, width: 130, height: 130, borderRadius: "50%", backgroundColor: "rgba(41,141,255,0.18)" }} />
             <div style={{ position: "absolute", bottom: -20, left: -20, width: 80, height: 80, borderRadius: "50%", backgroundColor: "rgba(255,137,41,0.12)" }} />
 
-            <div style={{ position: "relative", textAlign: "center" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-macost-with-text.svg"
-                alt="Macost"
-                style={{ height: 38, width: "auto", display: "block", margin: "0 auto" }}
-              />
-            </div>
+              {/* Logo */}
+              <div style={{ position: "relative", textAlign: "center" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                      src="/logo-macost-with-text.svg"
+                      alt="Macost"
+                      style={{ height: 44, width: "auto", display: "block", margin: "0 auto 8px" }}
+                  />
+                  <p style={{ fontSize: 13, color: "rgba(180,210,255,0.8)", margin: "4px 0 0" }}>
+                      Yuk Kendalikan Arus Keuanganmu Sekarang!
+                  </p>
+              </div>
           </div>
 
           {/* Form */}
