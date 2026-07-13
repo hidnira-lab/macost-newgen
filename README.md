@@ -85,6 +85,16 @@ terkait tidak bisa dihapus (409). Router lain (auth, transactions,
 categories, dashboard, insights, receipts, statements, goals, saw_weights)
 dan CI otomatis belum dicakup.
 
+## CI
+
+`.github/workflows/ci.yml` menjalankan dua job paralel di tiap push/PR ke
+`main`: backend `pytest` (Python 3.12, tanpa secrets sama sekali — seluruh
+test suite pakai fake/mock, bukan Supabase/Gemini asli) dan frontend
+`npm run lint` + `npm run build` (Node 22, juga tanpa secrets karena satu-
+satunya env var yang dibaca frontend, `NEXT_PUBLIC_API_BASE_URL`, punya
+fallback default). `design-reference/` (raw Figma Make export, bukan kode
+app) dikecualikan dari lint lewat `eslint.config.mjs`.
+
 ## Status Implementasi
 
 - [x] Scaffold Next.js + FastAPI + docker-compose

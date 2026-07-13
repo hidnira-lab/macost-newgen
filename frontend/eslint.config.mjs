@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Raw Figma Make export kept for reference during the visual port (see
+    // STATUS.md) -- never shipped, never edited, not real app code.
+    "design-reference/**",
   ]),
 ]);
 
