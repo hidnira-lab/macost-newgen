@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
+import LoadingState from "@/components/loading-state";
 import type { SAWWeights } from "@/types";
 
 type CriterionKey = keyof SAWWeights;
@@ -258,7 +259,7 @@ export default function GoalPriorityPage() {
             )}
 
             {loading || !weights ? (
-              <p style={{ padding: 24, fontSize: 14, color: "#717182" }}>Memuat...</p>
+              <LoadingState />
             ) : (
               <>
                 {showInfo && (

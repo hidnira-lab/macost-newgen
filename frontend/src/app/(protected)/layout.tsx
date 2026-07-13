@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import Navbar from "@/components/navbar";
+import LoadingState from "@/components/loading-state";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -18,7 +19,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   if (loading || !user) {
     return (
       <main className="flex-1 flex items-center justify-center">
-        <p className="text-slate-500 text-sm">Memuat...</p>
+        <LoadingState />
       </main>
     );
   }

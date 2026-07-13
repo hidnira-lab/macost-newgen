@@ -6,6 +6,7 @@ import { ArrowLeft, RefreshCw, Clock, Inbox, Lightbulb, Sparkles } from "lucide-
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import AllocationSuggestionModal from "@/components/allocation-suggestion-modal";
+import LoadingState from "@/components/loading-state";
 import type { AllocationPending, AllocationSuggestion } from "@/types";
 
 function formatRupiah(value: number) {
@@ -185,7 +186,7 @@ export default function PendingAllocationsPage() {
             )}
 
             {loading ? (
-              <p style={{ padding: 24, fontSize: 14, color: "#717182" }}>Memuat...</p>
+              <LoadingState />
             ) : pending.length === 0 ? (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 400, padding: "40px 32px", textAlign: "center" }}>
                 <div

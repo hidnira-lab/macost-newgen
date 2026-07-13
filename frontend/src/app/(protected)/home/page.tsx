@@ -8,6 +8,7 @@ import { api, ApiError } from "@/lib/api";
 import BottomNav from "@/components/bottom-nav";
 import CategoryIcon from "@/components/category-icon";
 import AddTransactionModal from "@/components/add-transaction-modal";
+import LoadingState from "@/components/loading-state";
 import ScanReceiptModal from "@/components/scan-receipt-modal";
 import AllocationSuggestionModal from "@/components/allocation-suggestion-modal";
 import StatementImportModal from "@/components/statement-import-modal";
@@ -218,7 +219,7 @@ export default function HomePage() {
         >
           <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
             {loading ? (
-              <p style={{ padding: 24, fontSize: 14, color: "#717182" }}>Memuat...</p>
+              <LoadingState />
             ) : loadError ? (
               <p style={{ padding: 24, fontSize: 14, color: "#DC2626" }}>{loadError}</p>
             ) : (

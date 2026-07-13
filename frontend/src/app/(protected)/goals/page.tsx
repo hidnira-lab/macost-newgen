@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import BottomNav from "@/components/bottom-nav";
 import GoalDetailSheet from "@/components/goal-detail-sheet";
+import LoadingState from "@/components/loading-state";
 import type { Goal, GoalRankingItem } from "@/types";
 
 function formatRupiah(value: number) {
@@ -192,7 +193,7 @@ export default function GoalsPage() {
         >
           <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
             {loading ? (
-              <p style={{ padding: 24, fontSize: 14, color: "#717182" }}>Memuat...</p>
+              <LoadingState />
             ) : (
               <div style={{ paddingBottom: 32 }}>
                 {/* Header */}

@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, Edit2, Trash2, Check, X } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import WalletIconDisplay from "@/components/wallet-icon";
+import LoadingState from "@/components/loading-state";
 import type { Dompet, WalletIcon } from "@/types";
 
 function formatRupiah(value: number) {
@@ -344,7 +345,7 @@ export default function WalletsPage() {
             )}
 
             {loading ? (
-              <p style={{ padding: 24, fontSize: 14, color: "#717182" }}>Memuat...</p>
+              <LoadingState />
             ) : (
               <>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 }}>

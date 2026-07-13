@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, User, Mail, Phone, MapPin, Check, GraduationCap, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
+import LoadingState from "@/components/loading-state";
 
 const inputBase: CSSProperties = {
   width: "100%",
@@ -164,7 +165,7 @@ export default function EditProfilePage() {
               )}
 
               {loading ? (
-                <p style={{ padding: 24, fontSize: 14, color: "#717182", textAlign: "center" }}>Memuat...</p>
+                <LoadingState />
               ) : (
                 <>
                   <div style={{ backgroundColor: "white", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 16 }}>

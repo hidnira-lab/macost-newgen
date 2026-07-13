@@ -6,6 +6,7 @@ import { ArrowLeft, Search, X, Edit2, Trash2, ChevronDown, Check, TrendingDown, 
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import CategoryIcon from "@/components/category-icon";
+import LoadingState from "@/components/loading-state";
 import type { Kategori, Transaksi, TipeKategori } from "@/types";
 
 function formatRupiah(value: number) {
@@ -511,7 +512,7 @@ export default function TransactionsPage() {
             )}
 
             {loading ? (
-              <p style={{ padding: 24, fontSize: 14, color: "#717182" }}>Memuat...</p>
+              <LoadingState />
             ) : (
               <>
                 <div style={{ display: "flex", gap: 10, padding: "12px 16px", backgroundColor: "white", borderBottom: "1px solid #F0F0F0" }}>

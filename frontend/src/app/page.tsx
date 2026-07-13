@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import LoadingState from "@/components/loading-state";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -15,7 +16,7 @@ export default function HomePage() {
 
   return (
     <main className="flex-1 flex items-center justify-center">
-      <p className="text-slate-500 text-sm">Memuat...</p>
+      <LoadingState />
     </main>
   );
 }

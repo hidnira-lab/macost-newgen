@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import BottomNav from "@/components/bottom-nav";
 import { getCategoryStyle } from "@/components/category-icon";
+import LoadingState from "@/components/loading-state";
 import type { DashboardSummary, Goal, GoalRankingItem } from "@/types";
 
 const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
@@ -208,7 +209,7 @@ export default function DashboardPage() {
         >
           <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
             {loading ? (
-              <p style={{ padding: 24, fontSize: 14, color: "#717182" }}>Memuat...</p>
+              <LoadingState />
             ) : loadError ? (
               <p style={{ padding: 24, fontSize: 14, color: "#DC2626" }}>{loadError}</p>
             ) : summary ? (
