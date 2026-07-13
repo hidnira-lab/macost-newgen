@@ -12,7 +12,18 @@ class Settings:
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
     ai_vision_api_key: str = os.getenv("AI_VISION_API_KEY", "")
     ai_vision_model: str = os.getenv("AI_VISION_MODEL", "gemini-flash-latest")
-    frontend_origin: str = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
+    # Comma-separated so prod (Vercel) and local dev can both be allowed at
+    # once, e.g. "https://macost.vercel.app,http://localhost:3000".
+    frontend_origins: list[str] = [
+        origin.strip()
+        for origin in os.getenv("FRONTEND_ORIGIN", "http://localhost:3000").split(",")
+        if origin.strip()
+    ]
+    # Optional: Vercel assigns a new URL per preview deployment (PRs,
+    # branches), which can't be listed as exact strings ahead of time. Unset
+    # by default; e.g. "https://macost-newgen-.*\.vercel\.app" opts in once
+    # the Vercel project slug is known.
+    frontend_origin_regex: str | None = os.getenv("FRONTEND_ORIGIN_REGEX") or None
 
 
 settings = Settings()

@@ -19,8 +19,14 @@ macost-newgen/
 ├── frontend/     Next.js app
 ├── backend/      FastAPI app
 ├── docker-compose.yml
+├── DEPLOY.md
 └── README.md
 ```
+
+## Deploy
+
+Lihat [`DEPLOY.md`](./DEPLOY.md) untuk runbook deploy backend ke Railway
+dan frontend ke Vercel.
 
 ## Setup
 
