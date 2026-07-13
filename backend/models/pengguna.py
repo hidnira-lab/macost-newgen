@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -17,3 +19,11 @@ class PenggunaLogin(BaseModel):
 
 class Pengguna(PenggunaBase):
     id: str
+    telepon: Optional[str] = None
+    kota: Optional[str] = None
+
+
+class PenggunaUpdateRequest(BaseModel):
+    nama: Optional[str] = Field(default=None, min_length=2)
+    telepon: Optional[str] = None
+    kota: Optional[str] = None

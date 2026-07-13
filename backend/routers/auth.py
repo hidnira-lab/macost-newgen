@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from supabase import Client
 
-from core.security import CurrentUser, get_current_user
+from core.security import CurrentUser, get_current_user, get_user_client
 from core.supabase_client import get_service_client, get_supabase
-from models.pengguna import PenggunaCreate, PenggunaLogin
+from models.pengguna import Pengguna, PenggunaCreate, PenggunaLogin, PenggunaUpdateRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -78,6 +79,27 @@ def logout(current_user: CurrentUser = Depends(get_current_user)):
     return {"status": "logged out"}
 
 
-@router.get("/me")
-def me(current_user: CurrentUser = Depends(get_current_user)):
-    return {"id": current_user.id, "email": current_user.email}
+@router.get("/me", response_model=Pengguna)
+def me(
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Client = Depends(get_user_client),
+):
+    result = db.table("pengguna").select("id, nama, email, telepon, kota").eq("id", current_user.id).execute()
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profil tidak ditemukan")
+    return result.data[0]
+
+
+@router.patch("/me", response_model=Pengguna)
+def update_me(
+    payload: PenggunaUpdateRequest,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Client = Depends(get_user_client),
+):
+    update_fields = payload.model_dump(exclude_none=True)
+    if update_fields:
+        db.table("pengguna").update(update_fields).eq("id", current_user.id).execute()
+    result = db.table("pengguna").select("id, nama, email, telepon, kota").eq("id", current_user.id).execute()
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profil tidak ditemukan")
+    return result.data[0]
