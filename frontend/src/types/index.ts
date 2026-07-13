@@ -14,6 +14,14 @@ export interface Dompet {
   created_at: string;
 }
 
+export interface SAWWeights {
+  personal_importance: number;
+  progress_gap: number;
+  saving_capacity: number;
+  urgency: number;
+  target_amount: number;
+}
+
 export interface DompetCreateRequest {
   nama_dompet: string;
   icon: WalletIcon;

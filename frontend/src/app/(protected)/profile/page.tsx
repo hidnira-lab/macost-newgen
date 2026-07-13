@@ -22,12 +22,11 @@ type MenuItem = {
   href?: string;
 };
 
-// Prioritas Goal / Saran Tertunda / Notifikasi have no backing endpoint yet
-// (SAW weights are fixed constants, no persisted "pending suggestion" list)
-// — shown as inert "Segera" entries instead of faking a working screen for
-// them. Kelola Dompet moved to a real link once wallet CRUD shipped.
+// Saran Tertunda / Notifikasi have no backing endpoint yet (no persisted
+// "pending suggestion" list) — shown as inert "Segera" entries instead of
+// faking a working screen for them. Kelola Dompet and Prioritas Goal moved
+// to real links once their backends shipped.
 const SEGERA_ITEMS: MenuItem[] = [
-  { Icon: SlidersHorizontal, label: "Prioritas Goal", desc: "Atur bobot SAW & strategi", color: "#FF8929" },
   { Icon: Clock, label: "Saran Tertunda", desc: "Fitur akan datang", color: "#F59E0B" },
   { Icon: Bell, label: "Notifikasi", desc: "Pengingat tabungan & tagihan", color: "#A855F7" },
 ];
@@ -293,6 +292,46 @@ export default function ProfilePage() {
                       <p style={{ fontSize: 12, color: "#A0A0A8", margin: 0 }}>
                         {loading ? "…" : `${wallets.length} dompet terhubung`}
                       </p>
+                    </div>
+                    <ChevronRight size={18} color="#C0C0C8" />
+                  </Link>
+
+                  <Link
+                    href="/goal-priority"
+                    style={{
+                      width: "100%",
+                      padding: "16px 18px",
+                      border: "none",
+                      borderTop: "1px solid #F4F4F4",
+                      backgroundColor: "transparent",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      textAlign: "left",
+                      fontFamily: "var(--font-inter), sans-serif",
+                      textDecoration: "none",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 13,
+                        flexShrink: 0,
+                        backgroundColor: "#FF892915",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#FF8929",
+                      }}
+                    >
+                      <SlidersHorizontal size={20} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1E1E", margin: "0 0 2px" }}>Prioritas Goal</p>
+                      <p style={{ fontSize: 12, color: "#A0A0A8", margin: 0 }}>Atur bobot SAW & strategi</p>
                     </div>
                     <ChevronRight size={18} color="#C0C0C8" />
                   </Link>

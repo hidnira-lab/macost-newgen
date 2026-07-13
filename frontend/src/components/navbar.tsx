@@ -10,6 +10,7 @@ const links = [
   { href: "/transactions", label: "Transaksi" },
   { href: "/wallets", label: "Dompet" },
   { href: "/goals", label: "Goals" },
+  { href: "/goal-priority", label: "Prioritas" },
   { href: "/insights", label: "AI Insight" },
   { href: "/profile", label: "Profil" },
 ];

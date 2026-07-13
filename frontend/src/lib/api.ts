@@ -12,6 +12,7 @@ import type {
   InsightResponse,
   Kategori,
   ReceiptExtraction,
+  SAWWeights,
   StatementExtractionResponse,
   Transaksi,
   TransaksiCreateRequest,
@@ -128,5 +129,10 @@ export const api = {
     update: (token: string, id: string, payload: Partial<DompetCreateRequest>) =>
       request<Dompet>(`/api/wallets/${id}`, { method: "PUT", body: JSON.stringify(payload) }, token),
     remove: (token: string, id: string) => request<void>(`/api/wallets/${id}`, { method: "DELETE" }, token),
+  },
+  sawWeights: {
+    get: (token: string) => request<SAWWeights>("/api/saw-weights", {}, token),
+    update: (token: string, payload: SAWWeights) =>
+      request<SAWWeights>("/api/saw-weights", { method: "PUT", body: JSON.stringify(payload) }, token),
   },
 };
