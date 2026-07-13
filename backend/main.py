@@ -10,6 +10,7 @@ from routers import (
     goals,
     insights,
     receipts,
+    saw_weights,
     statements,
     transactions,
     wallets,
@@ -35,6 +36,7 @@ app.include_router(insights.router, prefix="/api")
 app.include_router(receipts.router, prefix="/api")
 app.include_router(statements.router, prefix="/api")
 app.include_router(wallets.router, prefix="/api")
+app.include_router(saw_weights.router, prefix="/api")
 
 
 @app.get("/")

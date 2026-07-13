@@ -57,8 +57,18 @@ def _normalize_cost(values: list[float]) -> list[float]:
     return result
 
 
-def rank_goals(goals: list[GoalSAWInput], today: date | None = None) -> list[GoalSAWResult]:
-    """Rank goals using Simple Additive Weighting (SAW) across 5 fixed-weight criteria."""
+def rank_goals(
+    goals: list[GoalSAWInput],
+    today: date | None = None,
+    weights: dict[str, float] | None = None,
+) -> list[GoalSAWResult]:
+    """Rank goals using Simple Additive Weighting (SAW) across 5 criteria.
+
+    `weights` defaults to the fixed CRITERIA_WEIGHTS but callers (see
+    services/saw_weights.py) may pass a per-user override fetched from the
+    pengaturan_saw table, so this function's own default behavior — and
+    every existing caller that doesn't pass weights — is unchanged."""
+    weights = weights or CRITERIA_WEIGHTS
     if not goals:
         return []
 
@@ -66,8 +76,8 @@ def rank_goals(goals: list[GoalSAWInput], today: date | None = None) -> list[Goa
 
     if len(goals) == 1:
         g = goals[0]
-        criteria_scores = {key: 1.0 for key in CRITERIA_WEIGHTS}
-        score = sum(CRITERIA_WEIGHTS[k] * v for k, v in criteria_scores.items())
+        criteria_scores = {key: 1.0 for key in weights}
+        score = sum(weights[k] * v for k, v in criteria_scores.items())
         return [
             GoalSAWResult(
                 goal_id=g.goal_id,
@@ -106,7 +116,7 @@ def rank_goals(goals: list[GoalSAWInput], today: date | None = None) -> list[Goa
             "urgency": norm_urgency[i],
             "target_amount": norm_target_amount[i],
         }
-        score = sum(CRITERIA_WEIGHTS[k] * v for k, v in criteria_scores.items())
+        score = sum(weights[k] * v for k, v in criteria_scores.items())
         results.append(
             GoalSAWResult(
                 goal_id=g.goal_id,

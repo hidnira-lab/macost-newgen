@@ -5,6 +5,7 @@ from supabase import Client
 from services.goal_progress import compute_goal_progress
 from services.saving_capacity import compute_monthly_saving_capacity
 from services.saw_engine import GoalSAWInput, GoalSAWResult, rank_goals
+from services.saw_weights import get_user_saw_weights_fraction
 
 
 def rank_user_goals(db: Client, pengguna_id: str) -> list[GoalSAWResult]:
@@ -16,6 +17,7 @@ def rank_user_goals(db: Client, pengguna_id: str) -> list[GoalSAWResult]:
         return []
 
     capacity = compute_monthly_saving_capacity(db, pengguna_id)
+    weights = get_user_saw_weights_fraction(db, pengguna_id)
     saw_inputs = [
         GoalSAWInput(
             goal_id=g["id"],
@@ -29,4 +31,4 @@ def rank_user_goals(db: Client, pengguna_id: str) -> list[GoalSAWResult]:
         )
         for g in goals_with_progress
     ]
-    return rank_goals(saw_inputs)
+    return rank_goals(saw_inputs, weights=weights)
