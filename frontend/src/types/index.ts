@@ -144,3 +144,31 @@ export interface InsightCard {
 export interface InsightResponse {
   insights: InsightCard[];
 }
+
+export interface ReceiptExtraction {
+  success: boolean;
+  nominal: number | null;
+  tanggal: string | null;
+  deskripsi: string | null;
+  kategori_id_suggestion: string | null;
+  nama_kategori_suggestion: string | null;
+  missing_fields: string[];
+  error_reason: string | null;
+  error_message: string | null;
+}
+
+export interface StatementTransactionCandidate {
+  tanggal: string | null;
+  deskripsi: string;
+  nominal: number;
+  tipe_transaksi: TipeKategori;
+  kategori_id_suggestion: string | null;
+  nama_kategori_suggestion: string | null;
+}
+
+export interface StatementExtractionResponse {
+  success: boolean;
+  transactions: StatementTransactionCandidate[];
+  error_reason: string | null;
+  error_message: string | null;
+}

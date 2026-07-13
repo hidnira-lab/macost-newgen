@@ -2,7 +2,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
-from routers import allocations, auth, categories, dashboard, goals, insights, transactions
+from routers import (
+    allocations,
+    auth,
+    categories,
+    dashboard,
+    goals,
+    insights,
+    receipts,
+    statements,
+    transactions,
+)
 
 app = FastAPI(title="Macost API", version="0.1.0")
 
@@ -21,6 +31,8 @@ app.include_router(goals.router, prefix="/api")
 app.include_router(allocations.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(insights.router, prefix="/api")
+app.include_router(receipts.router, prefix="/api")
+app.include_router(statements.router, prefix="/api")
 
 
 @app.get("/")

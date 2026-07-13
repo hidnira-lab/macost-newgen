@@ -7,6 +7,7 @@ from services.expense_breakdown import compute_expense_breakdown
 from services.gemini_client import GeminiError, generate_json_text
 from services.goal_progress import compute_goal_progress
 from services.goal_ranking import rank_user_goals
+from services.json_repair import repair_and_parse_json
 from services.monthly_trend import compute_monthly_trend
 from services.wallet_balance import compute_total_saldo
 
@@ -57,25 +58,15 @@ def _build_data_summary(db: Client, pengguna_id: str) -> dict:
     }
 
 
-def _extract_json_array(raw: str) -> list:
-    """Fallback kalau Gemini tetap membungkus JSON dengan teks/markdown lain
-    meski sudah diminta responseMimeType application/json."""
-    start = raw.find("[")
-    end = raw.rfind("]")
-    if start == -1 or end == -1 or end < start:
-        raise GeminiError(f"Tidak menemukan JSON array pada respons Gemini: {raw[:300]}")
-    return json.loads(raw[start : end + 1])
-
-
 def generate_insights(db: Client, pengguna_id: str) -> list[dict]:
     summary = _build_data_summary(db, pengguna_id)
     prompt = PROMPT_TEMPLATE.format(data_json=json.dumps(summary, ensure_ascii=False))
 
     raw = generate_json_text(prompt, settings.gemini_api_key)
     try:
-        parsed = json.loads(raw)
-    except json.JSONDecodeError:
-        parsed = _extract_json_array(raw)
+        parsed = repair_and_parse_json(raw)
+    except json.JSONDecodeError as exc:
+        raise GeminiError(f"Tidak bisa parse JSON dari respons Gemini: {raw[:300]}") from exc
 
     if not isinstance(parsed, list):
         raise GeminiError("Respons Gemini bukan JSON array")

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import AllocationSuggestionModal from "@/components/allocation-suggestion-modal";
-import type { AllocationSuggestion, Kategori, Transaksi } from "@/types";
+import StatementImportModal from "@/components/statement-import-modal";
+import type { AllocationSuggestion, Kategori, MetodeInput, StatementExtractionResponse, Transaksi } from "@/types";
 
 function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(
@@ -29,6 +30,16 @@ export default function TransactionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [suggestion, setSuggestion] = useState<AllocationSuggestion | null>(null);
+
+  const [metodeInput, setMetodeInput] = useState<MetodeInput>("Manual");
+  const [scanning, setScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
+
+  const [statementLoading, setStatementLoading] = useState(false);
+  const [statementResult, setStatementResult] = useState<StatementExtractionResponse | null>(null);
+  const [showStatementModal, setShowStatementModal] = useState(false);
+  const statementInputRef = useRef<HTMLInputElement>(null);
 
   async function loadAll() {
     if (!token) return;
@@ -58,6 +69,73 @@ export default function TransactionsPage() {
     setNominal("");
     setTanggal(todayIso());
     setEditingId(null);
+    setMetodeInput("Manual");
+    setScanMessage(null);
+  }
+
+  async function handleReceiptFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !token) return;
+    setScanning(true);
+    setScanMessage(null);
+    try {
+      const result = await api.receipts.scan(token, file);
+      if (result.nominal) setNominal(String(result.nominal));
+      if (result.tanggal) setTanggal(result.tanggal);
+      if (result.kategori_id_suggestion) setKategoriId(result.kategori_id_suggestion);
+
+      if (result.success) {
+        setMetodeInput("Scan Struk");
+        setScanMessage({
+          type: "success",
+          text: `Struk berhasil dipindai${result.deskripsi ? ` (${result.deskripsi})` : ""}. Periksa data di bawah sebelum menyimpan.`,
+        });
+      } else {
+        // Dual-path fallback (FR-004): tidak retry otomatis, langsung
+        // tampilkan form manual dengan data parsial (kalau ada) sebagai bantuan.
+        setMetodeInput("Manual");
+        setScanMessage({
+          type: "error",
+          text: result.error_message ?? "Struk tidak terbaca. Isi data manual di bawah.",
+        });
+      }
+    } catch (err) {
+      setMetodeInput("Manual");
+      setScanMessage({
+        type: "error",
+        text: err instanceof ApiError ? err.message : "Gagal memindai struk. Isi data manual di bawah.",
+      });
+    } finally {
+      setScanning(false);
+      if (receiptInputRef.current) receiptInputRef.current.value = "";
+    }
+  }
+
+  async function handleStatementFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !token) return;
+    setShowStatementModal(true);
+    setStatementLoading(true);
+    setStatementResult(null);
+    try {
+      const result = await api.statements.extract(token, file);
+      setStatementResult(result);
+    } catch (err) {
+      setStatementResult({
+        success: false,
+        transactions: [],
+        error_reason: "api_error",
+        error_message: err instanceof ApiError ? err.message : "Gagal mengekstrak dokumen.",
+      });
+    } finally {
+      setStatementLoading(false);
+      if (statementInputRef.current) statementInputRef.current.value = "";
+    }
+  }
+
+  function closeStatementModal() {
+    setShowStatementModal(false);
+    setStatementResult(null);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -66,7 +144,7 @@ export default function TransactionsPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const payload = { kategori_id: kategoriId, nominal: Number(nominal), tanggal };
+      const payload = { kategori_id: kategoriId, nominal: Number(nominal), tanggal, metode_input: metodeInput };
       if (editingId) {
         await api.transactions.update(token, editingId, payload);
       } else {
@@ -96,6 +174,8 @@ export default function TransactionsPage() {
     setKategoriId(txn.kategori_id);
     setNominal(String(txn.nominal));
     setTanggal(txn.tanggal);
+    setMetodeInput("Manual");
+    setScanMessage(null);
   }
 
   async function handleDelete(id: string) {
@@ -135,6 +215,54 @@ export default function TransactionsPage() {
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>
       )}
+
+      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-3">
+        <h2 className="font-semibold text-slate-900">Import Otomatis</h2>
+        <div className="flex flex-wrap gap-2">
+          <input
+            ref={receiptInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleReceiptFileChange}
+          />
+          <button
+            type="button"
+            disabled={scanning}
+            onClick={() => receiptInputRef.current?.click()}
+            className="rounded-md border border-slate-300 text-sm font-medium px-4 py-2 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            {scanning ? "Memindai struk... (maks 10 detik)" : "Scan Struk"}
+          </button>
+
+          <input
+            ref={statementInputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={handleStatementFileChange}
+          />
+          <button
+            type="button"
+            onClick={() => statementInputRef.current?.click()}
+            className="rounded-md border border-slate-300 text-sm font-medium px-4 py-2 text-slate-700 hover:bg-slate-50"
+          >
+            Upload E-Statement (PDF)
+          </button>
+        </div>
+        {scanMessage && (
+          <p
+            className={
+              "text-sm rounded-md px-3 py-2 border " +
+              (scanMessage.type === "success"
+                ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                : "text-amber-700 bg-amber-50 border-amber-200")
+            }
+          >
+            {scanMessage.text}
+          </p>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
         <h2 className="font-semibold text-slate-900">{editingId ? "Edit Transaksi" : "Tambah Transaksi"}</h2>
@@ -258,6 +386,17 @@ export default function TransactionsPage() {
           suggestion={suggestion}
           onConfirm={handleConfirmAllocation}
           onDismiss={handleDismissAllocation}
+        />
+      )}
+
+      {showStatementModal && token && (
+        <StatementImportModal
+          token={token}
+          categories={categories}
+          loading={statementLoading}
+          result={statementResult}
+          onClose={closeStatementModal}
+          onImported={loadAll}
         />
       )}
     </div>

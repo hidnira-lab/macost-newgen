@@ -9,6 +9,8 @@ import type {
   GoalRankingItem,
   InsightResponse,
   Kategori,
+  ReceiptExtraction,
+  StatementExtractionResponse,
   Transaksi,
   TransaksiCreateRequest,
   User,
@@ -45,6 +47,30 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
   }
 
   if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
+}
+
+async function uploadFile<T>(path: string, file: File, token: string): Promise<T> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      if (body?.detail) detail = body.detail;
+    } catch {
+      // response has no JSON body, keep statusText
+    }
+    throw new ApiError(detail, res.status);
+  }
+
   return (await res.json()) as T;
 }
 
@@ -85,5 +111,12 @@ export const api = {
   },
   insights: {
     generate: (token: string) => request<InsightResponse>("/api/insights/generate", { method: "POST" }, token),
+  },
+  receipts: {
+    scan: (token: string, file: File) => uploadFile<ReceiptExtraction>("/api/receipts/scan", file, token),
+  },
+  statements: {
+    extract: (token: string, file: File) =>
+      uploadFile<StatementExtractionResponse>("/api/statements/extract", file, token),
   },
 };

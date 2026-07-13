@@ -25,6 +25,12 @@ from .kategori import (
     TipeKategori,
 )
 from .pengguna import Pengguna, PenggunaBase, PenggunaCreate, PenggunaLogin
+from .receipt import ReceiptExtraction
+from .statement import (
+    StatementExtractionResponse,
+    StatementTransactionCandidate,
+    TipeTransaksiStatement,
+)
 from .transaksi import (
     MetodeInput,
     Transaksi,
@@ -65,6 +71,10 @@ __all__ = [
     "PenggunaBase",
     "PenggunaCreate",
     "PenggunaLogin",
+    "ReceiptExtraction",
+    "StatementExtractionResponse",
+    "StatementTransactionCandidate",
+    "TipeTransaksiStatement",
     "MetodeInput",
     "Transaksi",
     "TransaksiBase",
