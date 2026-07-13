@@ -1,4 +1,5 @@
-from typing import Literal
+from datetime import datetime
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -13,3 +14,4 @@ class InsightCard(BaseModel):
 
 class InsightResponse(BaseModel):
     insights: list[InsightCard]
+    generated_at: Optional[datetime] = None

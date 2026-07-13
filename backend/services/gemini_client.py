@@ -1,8 +1,15 @@
+import time
+
 import httpx
 
 GEMINI_MODEL = "gemini-flash-latest"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 GEMINI_TIMEOUT_SECONDS = 45.0
+# Gemini Flash occasionally returns 503 "high demand" or hangs until our own
+# timeout during traffic spikes -- Google's own error message says these are
+# "usually temporary", so one retry after a short pause clears most of them
+# without making the user manually click generate again.
+GEMINI_RETRY_DELAY_SECONDS = 3.0
 
 
 class GeminiError(Exception):
@@ -16,26 +23,43 @@ def generate_json_text(prompt: str, api_key: str) -> str:
     if not api_key:
         raise GeminiError("GEMINI_API_KEY belum diisi di backend/.env")
 
-    try:
-        response = httpx.post(
-            GEMINI_API_URL,
-            params={"key": api_key},
-            json={
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "responseMimeType": "application/json",
-                    "temperature": 0.4,
-                    "thinkingConfig": {"thinkingBudget": 0},
-                    # Default token limit is too small for a 3-5 item JSON
-                    # array and silently truncates mid-string; set explicitly.
-                    "maxOutputTokens": 2048,
-                },
-            },
-            timeout=GEMINI_TIMEOUT_SECONDS,
-        )
-    except httpx.RequestError as exc:
-        raise GeminiError(f"Gagal menghubungi Gemini API: {exc}") from exc
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "temperature": 0.4,
+            "thinkingConfig": {"thinkingBudget": 0},
+            # Default token limit is too small for a 3-5 item JSON array and
+            # silently truncates mid-string; set explicitly.
+            "maxOutputTokens": 2048,
+        },
+    }
 
+    response: httpx.Response | None = None
+    request_error: httpx.RequestError | None = None
+    for attempt in range(2):
+        request_error = None
+        try:
+            response = httpx.post(
+                GEMINI_API_URL, params={"key": api_key}, json=payload, timeout=GEMINI_TIMEOUT_SECONDS
+            )
+        except httpx.RequestError as exc:
+            request_error = exc
+            response = None
+
+        transient = request_error is not None or (response is not None and response.status_code == 503)
+        if transient and attempt == 0:
+            time.sleep(GEMINI_RETRY_DELAY_SECONDS)
+            continue
+        break
+
+    if request_error is not None:
+        raise GeminiError(f"Gagal menghubungi Gemini API: {request_error}") from request_error
+    assert response is not None
+    if response.status_code == 503:
+        raise GeminiError(
+            "Gemini API sedang mengalami lonjakan trafik tinggi di sisi Google. Coba lagi beberapa saat lagi."
+        )
     if response.status_code != 200:
         raise GeminiError(f"Gemini API error {response.status_code}: {response.text[:300]}")
 

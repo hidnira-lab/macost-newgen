@@ -191,6 +191,7 @@ export interface InsightCard {
 
 export interface InsightResponse {
   insights: InsightCard[];
+  generated_at: string | null;
 }
 
 export interface ReceiptExtraction {

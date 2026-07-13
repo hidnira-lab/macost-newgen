@@ -121,6 +121,7 @@ export const api = {
   },
   insights: {
     generate: (token: string) => request<InsightResponse>("/api/insights/generate", { method: "POST" }, token),
+    latest: (token: string) => request<InsightResponse>("/api/insights/latest", {}, token),
   },
   receipts: {
     scan: (token: string, file: File) => uploadFile<ReceiptExtraction>("/api/receipts/scan", file, token),

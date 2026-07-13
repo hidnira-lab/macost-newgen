@@ -13,6 +13,16 @@ function formatRupiah(value: number) {
   );
 }
 
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "baru saja";
+  if (mins < 60) return `${mins} menit lalu`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} jam lalu`;
+  return `${Math.floor(hrs / 24)} hari lalu`;
+}
+
 const TIPE_META: Record<InsightTipe, { label: string; Icon: typeof Star; accent: string; bg: string; border: string }> = {
   positive: { label: "Pencapaian", Icon: Star, accent: "#22C55E", bg: "linear-gradient(135deg, #F0FFF4, #E8FFF1)", border: "rgba(34,197,94,0.22)" },
   warning: { label: "Perhatian", Icon: AlertTriangle, accent: "#EF4444", bg: "linear-gradient(135deg, #FFF5F5, #FEF0F0)", border: "rgba(239,68,68,0.2)" },
@@ -27,11 +37,14 @@ export default function InsightsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [insights, setInsights] = useState<InsightCard[] | null>(null);
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // loadStats only backs the header quick-stats bar; insight generation is a
-  // separate, explicit, user-triggered action (see handleGenerate).
+  // loadStats backs the header quick-stats bar; insights.latest restores the
+  // last generated batch (saved server-side) so navigating away and back
+  // doesn't lose it and doesn't burn another Gemini call. Generating a new
+  // batch is still a separate, explicit, user-triggered action (handleGenerate).
   useEffect(() => {
     async function loadStats() {
       if (!token) return;
@@ -46,7 +59,20 @@ export default function InsightsPage() {
         setInitialLoading(false);
       }
     }
+    async function loadLatestInsights() {
+      if (!token) return;
+      try {
+        const res = await api.insights.latest(token);
+        setInsights(res.insights);
+        setGeneratedAt(res.generated_at);
+      } catch {
+        // 404 means the user hasn't generated any insight yet — keep the
+        // empty state; any other failure is non-fatal too, since the user
+        // can still generate fresh insights.
+      }
+    }
     loadStats();
+    loadLatestInsights();
   }, [token]);
 
   async function handleGenerate() {
@@ -56,6 +82,7 @@ export default function InsightsPage() {
     try {
       const res = await api.insights.generate(token);
       setInsights(res.insights);
+      setGeneratedAt(res.generated_at);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal membuat insight");
     } finally {
@@ -359,7 +386,9 @@ export default function InsightsPage() {
                               >
                                 {meta.label}
                               </span>
-                              <span style={{ fontSize: 10, color: "#A0A0A8", flexShrink: 0 }}>Baru saja</span>
+                              <span style={{ fontSize: 10, color: "#A0A0A8", flexShrink: 0 }}>
+                                {generatedAt ? timeAgo(generatedAt) : "Baru saja"}
+                              </span>
                             </div>
 
                             <p style={{ fontSize: 14, fontWeight: 700, color: "#1E1E1E", margin: "0 0 4px" }}>
