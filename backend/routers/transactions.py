@@ -11,7 +11,18 @@ SELECT_WITH_KATEGORI = "*, kategori(nama_kategori, tipe, flag_pemasukan, flag_pe
 
 
 def _get_or_create_wallet(db: Client, pengguna_id: str) -> dict:
-    result = db.table("dompet").select("id, saldo").eq("pengguna_id", pengguna_id).limit(1).execute()
+    # Ordered by created_at so the "primary" wallet a transaction lands in is
+    # deterministic (the oldest one) now that users can have several wallets
+    # via the /wallets CRUD endpoints, rather than depending on unordered row
+    # order from Postgres.
+    result = (
+        db.table("dompet")
+        .select("id, saldo")
+        .eq("pengguna_id", pengguna_id)
+        .order("created_at")
+        .limit(1)
+        .execute()
+    )
     if result.data:
         return result.data[0]
     created = (

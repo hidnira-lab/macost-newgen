@@ -12,6 +12,7 @@ from routers import (
     receipts,
     statements,
     transactions,
+    wallets,
 )
 
 app = FastAPI(title="Macost API", version="0.1.0")
@@ -33,6 +34,7 @@ app.include_router(dashboard.router, prefix="/api")
 app.include_router(insights.router, prefix="/api")
 app.include_router(receipts.router, prefix="/api")
 app.include_router(statements.router, prefix="/api")
+app.include_router(wallets.router, prefix="/api")
 
 
 @app.get("/")
