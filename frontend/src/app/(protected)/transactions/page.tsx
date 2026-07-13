@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Search, X, Edit2, Trash2, ChevronDown, Check, TrendingDown, TrendingUp } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
-import AllocationSuggestionModal from "@/components/allocation-suggestion-modal";
-import StatementImportModal from "@/components/statement-import-modal";
-import type { AllocationSuggestion, Kategori, MetodeInput, StatementExtractionResponse, Transaksi } from "@/types";
+import CategoryIcon from "@/components/category-icon";
+import type { Kategori, Transaksi, TipeKategori } from "@/types";
 
 function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(
@@ -13,33 +14,314 @@ function formatRupiah(value: number) {
   );
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
+}
+
+function ActionSheet({
+  txn,
+  onEdit,
+  onDelete,
+  onClose,
+}: {
+  txn: Transaksi;
+  onEdit: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 120,
+        backgroundColor: "rgba(7,37,72,0.5)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-end",
+        backdropFilter: "blur(2px)",
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ backgroundColor: "white", borderRadius: "20px 20px 0 0", padding: "16px 16px 36px", boxShadow: "0 -8px 32px rgba(0,0,0,0.15)" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+          <div style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: "#E0E0E0" }} />
+        </div>
+        <div style={{ padding: "0 4px 14px", borderBottom: "1px solid #F0F0F0", marginBottom: 8 }}>
+          <p style={{ fontSize: 12, color: "#A0A0A8", margin: "0 0 2px", fontFamily: "var(--font-inter), sans-serif" }}>
+            {formatDate(txn.tanggal)}
+          </p>
+          <p style={{ fontSize: 15, fontWeight: 700, color: "#1E1E1E", margin: "0 0 2px", fontFamily: "var(--font-plus-jakarta-sans), sans-serif" }}>
+            {txn.nama_kategori}
+          </p>
+          <p
+            style={{
+              fontSize: 17,
+              fontWeight: 800,
+              margin: 0,
+              color: txn.tipe_transaksi === "Pemasukan" ? "#22C55E" : "#EF4444",
+              fontFamily: "var(--font-plus-jakarta-sans), sans-serif",
+            }}
+          >
+            {txn.tipe_transaksi === "Pemasukan" ? "+" : "-"}
+            {formatRupiah(txn.nominal)}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onEdit}
+          style={{
+            width: "100%",
+            padding: "15px",
+            borderRadius: 14,
+            border: "none",
+            backgroundColor: "#F0F7FF",
+            color: "#298DFF",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: "pointer",
+            marginBottom: 10,
+            fontFamily: "var(--font-inter), sans-serif",
+          }}
+        >
+          <Edit2 size={18} />
+          Edit Transaksi
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          style={{
+            width: "100%",
+            padding: "15px",
+            borderRadius: 14,
+            border: "none",
+            backgroundColor: "#FEF2F2",
+            color: "#EF4444",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: "pointer",
+            fontFamily: "var(--font-inter), sans-serif",
+          }}
+        >
+          <Trash2 size={18} />
+          Hapus Transaksi
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EditModal({
+  txn,
+  categories,
+  saving,
+  onSave,
+  onClose,
+}: {
+  txn: Transaksi;
+  categories: Kategori[];
+  saving: boolean;
+  onSave: (payload: { kategori_id: string; nominal: number; tanggal: string }) => void;
+  onClose: () => void;
+}) {
+  const [amount, setAmount] = useState(txn.nominal.toLocaleString("id-ID"));
+  const [type, setType] = useState<TipeKategori>(txn.tipe_transaksi);
+  const [kategoriId, setKategoriId] = useState(txn.kategori_id);
+  const [tanggal, setTanggal] = useState(txn.tanggal);
+
+  const filteredCategories = categories.filter((c) => c.tipe === type);
+  const rawAmount = parseInt(amount.replace(/\./g, "") || "0", 10);
+  const canSave = rawAmount > 0 && kategoriId !== "" && !saving;
+
+  function handleAmountChange(e: ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\D/g, "");
+    setAmount(raw ? parseInt(raw, 10).toLocaleString("id-ID") : "");
+  }
+
+  function handleTypeChange(t: TipeKategori) {
+    setType(t);
+    setKategoriId(categories.find((c) => c.tipe === t)?.id ?? "");
+  }
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 130,
+        backgroundColor: "rgba(7,37,72,0.55)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-end",
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      <div style={{ backgroundColor: "white", borderRadius: "20px 20px 0 0", padding: "16px 16px 36px", maxHeight: "80vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <p style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "#1E1E1E", fontFamily: "var(--font-plus-jakarta-sans), sans-serif" }}>
+            Edit Transaksi
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ width: 30, height: 30, borderRadius: "50%", backgroundColor: "#F0F0F0", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <X size={15} color="#717182" />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: 6, backgroundColor: "#F2F2F2", borderRadius: 14, padding: 4, marginBottom: 14 }}>
+          {(["Pengeluaran", "Pemasukan"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => handleTypeChange(t)}
+              style={{
+                flex: 1,
+                padding: "11px",
+                borderRadius: 11,
+                border: "none",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 14,
+                fontFamily: "var(--font-inter), sans-serif",
+                backgroundColor: type === t ? (t === "Pengeluaran" ? "#EF4444" : "#22C55E") : "transparent",
+                color: type === t ? "white" : "#717182",
+                boxShadow: type === t ? "0 2px 10px rgba(0,0,0,0.15)" : "none",
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
+                {t === "Pengeluaran" ? <TrendingDown size={14} strokeWidth={2.5} /> : <TrendingUp size={14} strokeWidth={2.5} />}
+                {t}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, color: "#717182", margin: "0 0 6px", fontFamily: "var(--font-inter), sans-serif" }}>Jumlah</p>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", fontSize: 13, fontWeight: 700, color: "#717182" }}>Rp</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={amount}
+              onChange={handleAmountChange}
+              style={{
+                width: "100%",
+                padding: "12px 12px 12px 38px",
+                borderRadius: 12,
+                border: "1.5px solid #E0E0E0",
+                backgroundColor: "white",
+                fontSize: 16,
+                fontWeight: 700,
+                color: "#1E1E1E",
+                outline: "none",
+                boxSizing: "border-box",
+                fontFamily: "var(--font-inter), sans-serif",
+              }}
+            />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, color: "#717182", margin: "0 0 6px", fontFamily: "var(--font-inter), sans-serif" }}>Kategori</p>
+          <div style={{ position: "relative" }}>
+            <select
+              value={kategoriId}
+              onChange={(e) => setKategoriId(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px 36px 12px 14px",
+                borderRadius: 12,
+                border: "1.5px solid #E0E0E0",
+                backgroundColor: "white",
+                fontSize: 14,
+                color: "#1E1E1E",
+                outline: "none",
+                boxSizing: "border-box",
+                fontFamily: "var(--font-inter), sans-serif",
+                appearance: "none",
+              }}
+            >
+              {filteredCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nama_kategori}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={15} color="#A0A0A8" style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 18 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, color: "#717182", margin: "0 0 6px", fontFamily: "var(--font-inter), sans-serif" }}>Tanggal</p>
+          <input
+            type="date"
+            value={tanggal}
+            onChange={(e) => setTanggal(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "12px 14px",
+              borderRadius: 12,
+              border: "1.5px solid #E0E0E0",
+              backgroundColor: "white",
+              fontSize: 14,
+              color: "#1E1E1E",
+              outline: "none",
+              boxSizing: "border-box",
+              fontFamily: "var(--font-inter), sans-serif",
+            }}
+          />
+        </div>
+
+        <button
+          type="button"
+          onClick={() => canSave && onSave({ kategori_id: kategoriId, nominal: rawAmount, tanggal })}
+          disabled={!canSave}
+          style={{
+            width: "100%",
+            padding: "14px",
+            borderRadius: 14,
+            border: "none",
+            background: canSave ? "linear-gradient(135deg, #298DFF, #0070E0)" : "#E0E0E0",
+            color: canSave ? "white" : "#A0A0A8",
+            fontSize: 15,
+            fontWeight: 700,
+            cursor: canSave ? "pointer" : "not-allowed",
+            fontFamily: "var(--font-inter), sans-serif",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
+        >
+          <Check size={17} /> {saving ? "Menyimpan..." : "Simpan Perubahan"}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function TransactionsPage() {
   const { token } = useAuth();
+  const router = useRouter();
   const [categories, setCategories] = useState<Kategori[]>([]);
   const [transactions, setTransactions] = useState<Transaksi[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const [kategoriId, setKategoriId] = useState("");
-  const [nominal, setNominal] = useState("");
-  const [tanggal, setTanggal] = useState(todayIso());
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [suggestion, setSuggestion] = useState<AllocationSuggestion | null>(null);
-
-  const [metodeInput, setMetodeInput] = useState<MetodeInput>("Manual");
-  const [scanning, setScanning] = useState(false);
-  const [scanMessage, setScanMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const receiptInputRef = useRef<HTMLInputElement>(null);
-
-  const [statementLoading, setStatementLoading] = useState(false);
-  const [statementResult, setStatementResult] = useState<StatementExtractionResponse | null>(null);
-  const [showStatementModal, setShowStatementModal] = useState(false);
-  const statementInputRef = useRef<HTMLInputElement>(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | TipeKategori>("all");
+  const [selectedTx, setSelectedTx] = useState<Transaksi | null>(null);
+  const [editingTx, setEditingTx] = useState<Transaksi | null>(null);
 
   async function loadAll() {
     if (!token) return;
@@ -50,364 +332,287 @@ export default function TransactionsPage() {
       setCategories(cats);
       setTransactions(txns);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Gagal memuat data");
+      setError(err instanceof ApiError ? err.message : "Gagal memuat transaksi");
     } finally {
       setLoading(false);
     }
   }
 
-  // loadAll is also reused by the create/edit/delete handlers below, so it
-  // isn't split into an effect-only variant just to satisfy the linter.
+  // loadAll is also reused by the edit/delete handlers below, so it isn't
+  // split into an effect-only variant just to satisfy the linter.
   /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   useEffect(() => {
     loadAll();
   }, [token]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
-  function resetForm() {
-    setKategoriId("");
-    setNominal("");
-    setTanggal(todayIso());
-    setEditingId(null);
-    setMetodeInput("Manual");
-    setScanMessage(null);
-  }
-
-  async function handleReceiptFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !token) return;
-    setScanning(true);
-    setScanMessage(null);
-    try {
-      const result = await api.receipts.scan(token, file);
-      if (result.nominal) setNominal(String(result.nominal));
-      if (result.tanggal) setTanggal(result.tanggal);
-      if (result.kategori_id_suggestion) setKategoriId(result.kategori_id_suggestion);
-
-      if (result.success) {
-        setMetodeInput("Scan Struk");
-        setScanMessage({
-          type: "success",
-          text: `Struk berhasil dipindai${result.deskripsi ? ` (${result.deskripsi})` : ""}. Periksa data di bawah sebelum menyimpan.`,
-        });
-      } else {
-        // Dual-path fallback (FR-004): tidak retry otomatis, langsung
-        // tampilkan form manual dengan data parsial (kalau ada) sebagai bantuan.
-        setMetodeInput("Manual");
-        setScanMessage({
-          type: "error",
-          text: result.error_message ?? "Struk tidak terbaca. Isi data manual di bawah.",
-        });
-      }
-    } catch (err) {
-      setMetodeInput("Manual");
-      setScanMessage({
-        type: "error",
-        text: err instanceof ApiError ? err.message : "Gagal memindai struk. Isi data manual di bawah.",
-      });
-    } finally {
-      setScanning(false);
-      if (receiptInputRef.current) receiptInputRef.current.value = "";
-    }
-  }
-
-  async function handleStatementFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !token) return;
-    setShowStatementModal(true);
-    setStatementLoading(true);
-    setStatementResult(null);
-    try {
-      const result = await api.statements.extract(token, file);
-      setStatementResult(result);
-    } catch (err) {
-      setStatementResult({
-        success: false,
-        transactions: [],
-        error_reason: "api_error",
-        error_message: err instanceof ApiError ? err.message : "Gagal mengekstrak dokumen.",
-      });
-    } finally {
-      setStatementLoading(false);
-      if (statementInputRef.current) statementInputRef.current.value = "";
-    }
-  }
-
-  function closeStatementModal() {
-    setShowStatementModal(false);
-    setStatementResult(null);
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!token || !kategoriId || !nominal) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      const payload = { kategori_id: kategoriId, nominal: Number(nominal), tanggal, metode_input: metodeInput };
-      if (editingId) {
-        await api.transactions.update(token, editingId, payload);
-      } else {
-        const created = await api.transactions.create(token, payload);
-        if (created.tipe_transaksi === "Pemasukan" && created.source === "Flexible Side Income") {
-          // Only computes a suggestion — the modal's explicit confirm click is
-          // the sole path that writes to the alokasi table.
-          try {
-            const s = await api.allocations.suggest(token, { transaksi_id: created.id });
-            setSuggestion(s);
-          } catch {
-            // non-fatal: a failed suggestion shouldn't block the transaction flow
-          }
-        }
-      }
-      resetForm();
-      await loadAll();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Gagal menyimpan transaksi");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function startEdit(txn: Transaksi) {
-    setEditingId(txn.id);
-    setKategoriId(txn.kategori_id);
-    setNominal(String(txn.nominal));
-    setTanggal(txn.tanggal);
-    setMetodeInput("Manual");
-    setScanMessage(null);
-  }
-
   async function handleDelete(id: string) {
     if (!token) return;
-    if (!confirm("Hapus transaksi ini?")) return;
     setError(null);
     try {
       await api.transactions.remove(token, id);
+      setSelectedTx(null);
       await loadAll();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal menghapus transaksi");
     }
   }
 
-  async function handleConfirmAllocation(nominalAlokasi: number) {
-    if (!token || !suggestion?.goal_id) return;
-    await api.allocations.confirm(token, {
-      transaksi_id: suggestion.transaksi_id,
-      goal_id: suggestion.goal_id,
-      nominal_alokasi: nominalAlokasi,
-    });
-    setSuggestion(null);
+  async function handleSaveEdit(id: string, payload: { kategori_id: string; nominal: number; tanggal: string }) {
+    if (!token) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.transactions.update(token, id, payload);
+      setEditingTx(null);
+      await loadAll();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Gagal menyimpan perubahan");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function handleDismissAllocation() {
-    setSuggestion(null);
-  }
+  const sorted = [...transactions].sort((a, b) => (a.tanggal < b.tanggal ? 1 : -1));
+  const filtered = sorted.filter((t) => {
+    const matchSearch = search === "" || t.nama_kategori.toLowerCase().includes(search.toLowerCase());
+    const matchType = filter === "all" || t.tipe_transaksi === filter;
+    return matchSearch && matchType;
+  });
 
-  const selectedKategori = categories.find((c) => c.id === kategoriId);
-  const pemasukanCategories = categories.filter((c) => c.tipe === "Pemasukan");
-  const pengeluaranCategories = categories.filter((c) => c.tipe === "Pengeluaran");
+  const groups: Record<string, Transaksi[]> = {};
+  for (const t of filtered) {
+    if (!groups[t.tanggal]) groups[t.tanggal] = [];
+    groups[t.tanggal].push(t);
+  }
+  const groupedByDate = Object.entries(groups).sort(([a], [b]) => (a < b ? 1 : -1));
+
+  const totalPemasukan = filtered.filter((t) => t.tipe_transaksi === "Pemasukan").reduce((a, t) => a + t.nominal, 0);
+  const totalPengeluaran = filtered.filter((t) => t.tipe_transaksi === "Pengeluaran").reduce((a, t) => a + t.nominal, 0);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-slate-900">Transaksi</h1>
-
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>
-      )}
-
-      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-3">
-        <h2 className="font-semibold text-slate-900">Import Otomatis</h2>
-        <div className="flex flex-wrap gap-2">
-          <input
-            ref={receiptInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={handleReceiptFileChange}
-          />
-          <button
-            type="button"
-            disabled={scanning}
-            onClick={() => receiptInputRef.current?.click()}
-            className="rounded-md border border-slate-300 text-sm font-medium px-4 py-2 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: "flex",
+        justifyContent: "center",
+        backgroundColor: "#E8EEF4",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: 430, height: "100%", boxShadow: "0 0 60px rgba(7,37,72,0.18)", overflow: "hidden" }}>
+        <div
+          style={{
+            position: "relative",
+            height: "100%",
+            backgroundColor: "#FCFCFC",
+            display: "flex",
+            flexDirection: "column",
+            fontFamily: "var(--font-inter), sans-serif",
+            overflow: "hidden",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: "52px 20px 18px",
+              background: "linear-gradient(145deg, #072548 0%, #0F3870 60%, #1858A0 100%)",
+              flexShrink: 0,
+            }}
           >
-            {scanning ? "Memindai..." : "Scan Struk"}
-          </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <button
+                type="button"
+                onClick={() => router.back()}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 12,
+                  backgroundColor: "rgba(255,255,255,0.15)",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <ArrowLeft size={18} color="white" />
+              </button>
+              <h1 style={{ fontSize: 20, fontWeight: 800, color: "white", margin: 0, fontFamily: "var(--font-plus-jakarta-sans), sans-serif" }}>
+                Riwayat Transaksi
+              </h1>
+            </div>
 
-          <input
-            ref={statementInputRef}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={handleStatementFileChange}
-          />
-          <button
-            type="button"
-            onClick={() => statementInputRef.current?.click()}
-            className="rounded-md border border-slate-300 text-sm font-medium px-4 py-2 text-slate-700 hover:bg-slate-50"
-          >
-            Upload E-Statement (PDF)
-          </button>
-        </div>
-        {scanning && (
-          <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-md px-3 py-2">
-            <span
-              aria-hidden
-              className="h-4 w-4 shrink-0 rounded-full border-2 border-slate-300 border-t-slate-900 animate-spin"
-            />
-            Membaca struk dengan AI... biasanya 15-25 detik, mohon tunggu.
+            <div style={{ position: "relative", marginBottom: 12 }}>
+              <Search size={16} color="rgba(255,255,255,0.6)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+              <input
+                type="text"
+                placeholder="Cari transaksi..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "11px 36px 11px 40px",
+                  borderRadius: 12,
+                  border: "1.5px solid rgba(255,255,255,0.2)",
+                  backgroundColor: "rgba(255,255,255,0.12)",
+                  color: "white",
+                  fontSize: 14,
+                  outline: "none",
+                  boxSizing: "border-box",
+                  fontFamily: "var(--font-inter), sans-serif",
+                }}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", display: "flex", padding: 0 }}
+                >
+                  <X size={15} color="rgba(255,255,255,0.7)" />
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+              {(["all", "Pemasukan", "Pengeluaran"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setFilter(f)}
+                  style={{
+                    flexShrink: 0,
+                    padding: "7px 14px",
+                    borderRadius: 20,
+                    border: filter === f ? "none" : "1.5px solid rgba(255,255,255,0.25)",
+                    backgroundColor: filter === f ? "white" : "transparent",
+                    color: filter === f ? (f === "Pemasukan" ? "#22C55E" : f === "Pengeluaran" ? "#EF4444" : "#072548") : "rgba(255,255,255,0.8)",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily: "var(--font-inter), sans-serif",
+                  }}
+                >
+                  {f === "all" ? "Semua" : f === "Pemasukan" ? "↑ Pemasukan" : "↓ Pengeluaran"}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
-        {scanMessage && (
-          <p
-            className={
-              "text-sm rounded-md px-3 py-2 border " +
-              (scanMessage.type === "success"
-                ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                : "text-amber-700 bg-amber-50 border-amber-200")
-            }
-          >
-            {scanMessage.text}
-          </p>
-        )}
-      </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
-        <h2 className="font-semibold text-slate-900">{editingId ? "Edit Transaksi" : "Tambah Transaksi"}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Kategori</label>
-            <select
-              required
-              value={kategoriId}
-              onChange={(e) => setKategoriId(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            >
-              <option value="">Pilih kategori</option>
-              <optgroup label="Pemasukan">
-                {pemasukanCategories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nama_kategori}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Pengeluaran">
-                {pengeluaranCategories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nama_kategori}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-            {selectedKategori && (
-              <p className="text-xs text-slate-400">
-                Tipe: {selectedKategori.tipe}
-                {selectedKategori.flag_pemasukan ? ` · Source: ${selectedKategori.flag_pemasukan}` : ""}
-                {selectedKategori.flag_pengeluaran ? ` · ${selectedKategori.flag_pengeluaran}` : ""}
+          {/* Content */}
+          <div style={{ flex: 1, overflowY: "auto", backgroundColor: "#F4F6F8" }}>
+            {error && (
+              <p style={{ margin: 16, fontSize: 13, color: "#EF4444", backgroundColor: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: "10px 12px" }}>
+                {error}
               </p>
             )}
+
+            {loading ? (
+              <p style={{ padding: 24, fontSize: 14, color: "#717182" }}>Memuat...</p>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 10, padding: "12px 16px", backgroundColor: "white", borderBottom: "1px solid #F0F0F0" }}>
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "#A0A0A8", margin: "0 0 2px", fontWeight: 500 }}>Pemasukan</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: "#22C55E", margin: 0 }}>{formatRupiah(totalPemasukan)}</p>
+                  </div>
+                  <div style={{ width: 1, backgroundColor: "#F0F0F0" }} />
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "#A0A0A8", margin: "0 0 2px", fontWeight: 500 }}>Pengeluaran</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: "#EF4444", margin: 0 }}>{formatRupiah(totalPengeluaran)}</p>
+                  </div>
+                  <div style={{ width: 1, backgroundColor: "#F0F0F0" }} />
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "#A0A0A8", margin: "0 0 2px", fontWeight: 500 }}>Transaksi</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: "#1E1E1E", margin: 0 }}>{filtered.length}</p>
+                  </div>
+                </div>
+
+                {filtered.length === 0 ? (
+                  <div style={{ padding: 40, textAlign: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                      <Search size={44} color="#C0C0C8" strokeWidth={1.5} />
+                    </div>
+                    <p style={{ fontSize: 16, fontWeight: 600, color: "#1E1E1E", margin: "0 0 6px" }}>Tidak ditemukan</p>
+                    <p style={{ fontSize: 13, color: "#A0A0A8", margin: 0 }}>Coba ubah filter atau kata kunci pencarian</p>
+                  </div>
+                ) : (
+                  <div style={{ padding: "10px 0 24px" }}>
+                    {groupedByDate.map(([date, txs]) => (
+                      <div key={date}>
+                        <p style={{ fontSize: 12, fontWeight: 700, color: "#A0A0A8", padding: "8px 16px 6px", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          {formatDate(date)}
+                        </p>
+                        <div style={{ backgroundColor: "white", margin: "0 12px", borderRadius: 14, overflow: "hidden", boxShadow: "0 1px 8px rgba(0,0,0,0.05)" }}>
+                          {txs.map((t, idx) => (
+                            <div
+                              key={t.id}
+                              onClick={() => setSelectedTx(t)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "14px 16px",
+                                borderTop: idx > 0 ? "1px solid #F4F4F4" : "none",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <CategoryIcon category={t.nama_kategori} size={18} containerSize={42} borderRadius={12} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: 14, fontWeight: 600, color: "#1E1E1E", margin: "0 0 2px", fontFamily: "var(--font-plus-jakarta-sans), sans-serif" }}>
+                                  {t.nama_kategori}
+                                </p>
+                                <p style={{ fontSize: 12, color: "#A0A0A8", margin: 0 }}>{t.metode_input}</p>
+                              </div>
+                              <p
+                                style={{
+                                  fontSize: 15,
+                                  fontWeight: 700,
+                                  margin: 0,
+                                  flexShrink: 0,
+                                  color: t.tipe_transaksi === "Pemasukan" ? "#22C55E" : "#EF4444",
+                                  fontFamily: "var(--font-plus-jakarta-sans), sans-serif",
+                                }}
+                              >
+                                {t.tipe_transaksi === "Pemasukan" ? "+" : "-"}
+                                {formatRupiah(t.nominal)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Nominal (Rp)</label>
-            <input
-              type="number"
-              required
-              min={1}
-              value={nominal}
-              onChange={(e) => setNominal(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+
+          {selectedTx && !editingTx && (
+            <ActionSheet
+              txn={selectedTx}
+              onEdit={() => {
+                setEditingTx(selectedTx);
+                setSelectedTx(null);
+              }}
+              onDelete={() => handleDelete(selectedTx.id)}
+              onClose={() => setSelectedTx(null)}
             />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700">Tanggal</label>
-            <input
-              type="date"
-              required
-              value={tanggal}
-              onChange={(e) => setTanggal(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          )}
+          {editingTx && (
+            <EditModal
+              txn={editingTx}
+              categories={categories}
+              saving={saving}
+              onSave={(payload) => handleSaveEdit(editingTx.id, payload)}
+              onClose={() => setEditingTx(null)}
             />
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-md bg-slate-900 text-white text-sm font-medium px-4 py-2 hover:bg-slate-800 disabled:opacity-50"
-          >
-            {submitting ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Tambah Transaksi"}
-          </button>
-          {editingId && (
-            <button type="button" onClick={resetForm} className="text-sm text-slate-500 hover:text-slate-900">
-              Batal
-            </button>
           )}
         </div>
-      </form>
-
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        {loading ? (
-          <p className="p-6 text-sm text-slate-500">Memuat transaksi...</p>
-        ) : transactions.length === 0 ? (
-          <p className="p-6 text-sm text-slate-500">Belum ada transaksi.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500 text-left">
-              <tr>
-                <th className="px-4 py-3 font-medium">Tanggal</th>
-                <th className="px-4 py-3 font-medium">Kategori</th>
-                <th className="px-4 py-3 font-medium">Tipe</th>
-                <th className="px-4 py-3 font-medium">Source</th>
-                <th className="px-4 py-3 font-medium text-right">Nominal</th>
-                <th className="px-4 py-3 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {transactions.map((txn) => (
-                <tr key={txn.id}>
-                  <td className="px-4 py-3 text-slate-600">{txn.tanggal}</td>
-                  <td className="px-4 py-3 text-slate-900">{txn.nama_kategori}</td>
-                  <td className="px-4 py-3">
-                    <span className={txn.tipe_transaksi === "Pemasukan" ? "text-emerald-600" : "text-rose-600"}>
-                      {txn.tipe_transaksi}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">{txn.source ?? "-"}</td>
-                  <td className="px-4 py-3 text-right font-medium text-slate-900">{formatRupiah(txn.nominal)}</td>
-                  <td className="px-4 py-3 text-right space-x-2">
-                    <button onClick={() => startEdit(txn)} className="text-slate-500 hover:text-slate-900">
-                      Edit
-                    </button>
-                    <button onClick={() => handleDelete(txn.id)} className="text-slate-500 hover:text-red-600">
-                      Hapus
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </div>
-
-      {suggestion && (
-        <AllocationSuggestionModal
-          suggestion={suggestion}
-          onConfirm={handleConfirmAllocation}
-          onDismiss={handleDismissAllocation}
-        />
-      )}
-
-      {showStatementModal && token && (
-        <StatementImportModal
-          token={token}
-          categories={categories}
-          loading={statementLoading}
-          result={statementResult}
-          onClose={closeStatementModal}
-          onImported={loadAll}
-        />
-      )}
     </div>
   );
 }
