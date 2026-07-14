@@ -22,7 +22,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="hidden md:block border-b border-slate-200 bg-white">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         <span className="font-semibold text-slate-900">Macost</span>
         <nav className="flex items-center gap-4 text-sm">
