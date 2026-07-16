@@ -13,6 +13,8 @@ through goal-based saving and AI-powered smart allocation.
 
 **Live demo:** [macost-newgen.vercel.app](https://macost-newgen.vercel.app/)
 
+[![Release](https://img.shields.io/github/v/release/hidnira-lab/macost-newgen?style=for-the-badge)](https://github.com/hidnira-lab/macost-newgen/releases/latest)
+
 ## Tech Stack
 
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
