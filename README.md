@@ -1,32 +1,60 @@
 # Macost
 
-Pocket Management Information System untuk mahasiswa Indonesia — mengelola fixed
-allowance (uang bulanan) dan side income (freelance/part-time) lewat goal-based
-saving dan smart allocation berbasis AI.
+**Pocket Management Information System** untuk mahasiswa Indonesia — mengelola
+*fixed allowance* (uang bulanan) dan *side income* (freelance/part-time)
+lewat goal-based saving dan smart allocation berbasis AI.
 
-Web app saja, dijalankan lokal untuk demo.
+Web app, dijalankan lokal untuk demo atau di-deploy ke Railway + Vercel.
+
+## Fitur
+
+- **Auth** — register/login/logout via Supabase Auth, wallet default otomatis
+  dibuat saat register.
+- **CRUD Transaksi** — source (`Fixed Routine`/`Flexible Side Income`) dan
+  tipe (`Pemasukan`/`Pengeluaran`) otomatis diturunkan dari kategori, saldo
+  dompet ter-reconcile otomatis.
+- **Dashboard** — 5 KPI: breakdown kategori, progress goal, tren bulanan,
+  alert overspending, total saldo.
+- **Goal + SAW Ranking** — ranking goal pakai algoritma *Simple Additive
+  Weighting*, bobot kriteria (importance/urgency/progress gap/dst)
+  dikonfigurasi per-user di layar Goal Prioritization.
+- **Smart Allocation** — suggest-and-confirm: saran alokasi 35% dari side
+  income ke goal prioritas tertinggi, tidak pernah auto-commit; saran yang
+  di-skip tetap tersimpan dan bisa ditinjau lagi lewat Pending Allocations.
+- **AI Financial Assistant** — insight card-based satu arah lewat Gemini
+  Flash, dipicu klik user (bukan chat), grounded ke data transaksi/goal asli.
+- **Scan Struk & Upload E-Statement** — ekstraksi via Gemini Vision, hasil
+  selalu lewat form/preview yang bisa dikoreksi user sebelum disimpan (tidak
+  pernah auto-save langsung).
+- **Manage Wallets** — CRUD dompet dengan preset ikon populer (GoPay, OVO,
+  DANA, Bank).
+
+Lihat [`STATUS.md`](./STATUS.md) untuk detail verifikasi tiap fitur dan
+known limitations.
 
 ## Tech Stack
 
 - **Frontend**: Next.js (App Router, TypeScript, Tailwind CSS)
 - **Backend**: FastAPI (Python)
 - **Database & Auth**: Supabase (PostgreSQL, cloud-hosted — bukan container lokal)
+- **AI**: Gemini Flash (insight & vision extraction)
 
 ## Struktur Folder
 
 ```
 macost-newgen/
-├── frontend/     Next.js app
+├── frontend/     Next.js app (App Router)
+│   └── src/app/(protected)/   dashboard, goals, home, insights, profile,
+│                              transactions, wallets, dll
 ├── backend/      FastAPI app
+│   ├── routers/  auth, transactions, dashboard, goals, allocations,
+│   │             insights, receipts, statements, wallets, saw_weights
+│   └── services/ saw_engine, gemini_client, gemini_vision_client, dll
 ├── docker-compose.yml
 ├── DEPLOY.md
+├── STATUS.md
 └── README.md
 ```
-
-## Deploy
-
-Lihat [`DEPLOY.md`](./DEPLOY.md) untuk runbook deploy backend ke Railway
-dan frontend ke Vercel.
 
 ## Setup
 
@@ -91,6 +119,11 @@ terkait tidak bisa dihapus (409). Router lain (auth, transactions,
 categories, dashboard, insights, receipts, statements, goals, saw_weights)
 dan CI otomatis belum dicakup.
 
+## Deploy
+
+Lihat [`DEPLOY.md`](./DEPLOY.md) untuk runbook deploy backend ke Railway
+dan frontend ke Vercel.
+
 ## CI
 
 `.github/workflows/ci.yml` menjalankan dua job paralel di tiap push/PR ke
@@ -100,25 +133,6 @@ test suite pakai fake/mock, bukan Supabase/Gemini asli) dan frontend
 satunya env var yang dibaca frontend, `NEXT_PUBLIC_API_BASE_URL`, punya
 fallback default). `design-reference/` (raw Figma Make export, bukan kode
 app) dikecualikan dari lint lewat `eslint.config.mjs`.
-
-## Status Implementasi
-
-- [x] Scaffold Next.js + FastAPI + docker-compose
-- [x] Pydantic models untuk 6 entitas (Pengguna, Dompet, Kategori, Transaksi,
-      Goal, Alokasi)
-- [x] SAW engine (`backend/services/saw_engine.py`) — sudah bisa dites tanpa
-      Supabase, guard untuk 0 goal & 1 goal sudah ada
-- [x] Auth (register/login/logout via Supabase Auth)
-- [x] CRUD Transaksi manual + auto source labeling dari kategori
-- [x] Dashboard 5 KPI (breakdown kategori, progress goal, tren bulanan, alert
-      overspending, total saldo)
-- [x] CRUD Goal + integrasi SAW ranking (`GET /api/goals/ranking`)
-- [x] Smart Allocation (suggest-and-confirm — `POST /api/allocations/suggest`
-      hanya menghitung, `POST /api/allocations/confirm` satu-satunya endpoint
-      yang menulis ke tabel alokasi)
-- [x] AI Financial Assistant — insight card-based satu arah via Gemini Flash
-      (`POST /api/insights/generate`), dipicu klik user, bukan chat
-- [ ] Scan struk & upload e-statement (Gemini Flash API)
 
 ## Data Model
 
@@ -140,3 +154,6 @@ app) dikecualikan dari lint lewat `eslint.config.mjs`.
 | saving_capacity        | 21.5% | benefit |
 | urgency                 | 17.8% | cost    |
 | target_amount          | 16.2% | benefit |
+
+Bobot ini adalah default; user bisa mengubahnya sendiri lewat layar Goal
+Prioritization (`GET`/`PUT /api/saw-weights`).
