@@ -48,9 +48,6 @@ through goal-based saving and AI-powered smart allocation.
   saved.
 - **Wallet management** with popular preset icons (GoPay, OVO, DANA, Bank).
 
-See [`STATUS.md`](./STATUS.md) for detailed verification notes and known
-limitations.
-
 ## Project Structure
 
 ```
@@ -63,8 +60,6 @@ macost-newgen/
 │   │             insights, receipts, statements, wallets, saw_weights
 │   └── services/ saw_engine, gemini_client, gemini_vision_client, and more
 ├── docker-compose.yml
-├── DEPLOY.md
-├── STATUS.md
 └── README.md
 ```
 
@@ -130,11 +125,6 @@ suggest endpoint never writes to the `alokasi` table (only confirm does),
 and a wallet with linked transactions cannot be deleted (409). Other
 routers (auth, transactions, categories, dashboard, insights, receipts,
 statements, goals, saw_weights) and automated CI are not covered yet.
-
-## Deployment
-
-See [`DEPLOY.md`](./DEPLOY.md) for the full runbook to deploy the backend
-to Railway and the frontend to Vercel.
 
 ## CI
 
