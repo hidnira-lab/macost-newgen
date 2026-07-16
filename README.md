@@ -1,10 +1,9 @@
-```
-#   #   ###    ####   ###    ####  #####
-## ##  #   #  #      #   #  #        #
-# # #  #####  #      #   #   ###     #
-#   #  #   #  #      #   #      #    #
-#   #  #   #   ####   ###   ####     #
-```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/logo-macost-with-text.svg">
+    <img alt="Macost" src="frontend/public/logo-macost-with-text-light.svg" width="260">
+  </picture>
+</p>
 
 # Macost
 
