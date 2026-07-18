@@ -165,7 +165,7 @@ screen (`GET`/`PUT /api/saw-weights`).
 
 | Person | Area |
 |---|---|
-| Hidayat | System Architecture, Backend, and Integration |
+| Hidayat | System Architecture, Backend, & Integration |
 | Fertika | Backend & Database |
 | Khayyira | Frontend |
 | Zarra | Frontend |
