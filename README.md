@@ -160,3 +160,12 @@ code) is excluded from linting via `eslint.config.mjs`.
 
 These are the defaults; users can adjust them from the Goal Prioritization
 screen (`GET`/`PUT /api/saw-weights`).
+
+## Team Members Involved
+
+| Person | Area |
+|---|---|
+| Hidayat | System Architecture, Backend, and Integration |
+| Fertika | Backend & Database |
+| Khayyira | Frontend |
+| Zarra | Frontend |
